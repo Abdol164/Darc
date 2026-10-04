@@ -1,11 +1,12 @@
 "use client";
 
-/** Home — the overview a judge lands on: real numbers first, nothing diagnostic. */
+/** Home — the landing page when signed out; the overview, real numbers first, once signed in. */
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Shell } from "@/components/shell";
-import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
+import { Button, Empty, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
 import { AgentCardFace } from "@/components/agent-card";
+import { Landing } from "@/components/landing";
 import { MerchantCell, Stat, pieces as p } from "@/components/pieces";
 import { PlusIcon } from "@/components/icons";
 import { AGENT } from "@/lib/agent";
@@ -14,7 +15,7 @@ import { fmtUsd, loadCardState, type CardState } from "@/lib/chain";
 import { useOwner } from "@/lib/owner-context";
 
 export default function HomePage() {
-  const { owner, signIn, busy, error } = useOwner();
+  const { owner } = useOwner();
   const [cards, setCards] = useState<{ stored: StoredCard; state: CardState | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,54 +42,8 @@ export default function HomePage() {
 
   if (!owner) {
     return (
-      <Shell
-        title="Spending cards for AI agents"
-        subtitle="Give an agent a card with a daily limit and a short list of merchants. Every attempt it makes — approved or refused — is written on-chain where anyone can check it."
-      >
-        <div className={p.grid2}>
-          <div className={p.stack}>
-            <Panel>
-              <h2 className={u.h3}>Sign in with a passkey</h2>
-              <p className={u.lead}>
-                No seed phrase and no password. Your account is derived from your passkey on this
-                device, and the key never reaches a server.
-              </p>
-              <div className={p.btnRow}>
-                <Button variant="primary" size="lg" onClick={() => signIn("create")} disabled={!!busy}>
-                  {busy ?? "Create an account"}
-                </Button>
-                <Button size="lg" onClick={() => signIn("signIn")} disabled={!!busy}>
-                  I already have one
-                </Button>
-              </div>
-              {error && (
-                <div className={u.mt4}>
-                  <Notice tone="error" title="We could not read your account">
-                    {error}
-                  </Notice>
-                </div>
-              )}
-            </Panel>
-            <Panel title="Why it is safe to hand over">
-              <DataRow label="Daily limit" value="Spending above it is refused on-chain, not just flagged" />
-              <DataRow label="Merchant list" value="Payments anywhere else are refused" />
-              <DataRow label="Revocable" value="One action kills the card instantly and permanently" />
-              <DataRow label="Public record" value="Refusals are recorded, not only approvals" />
-              <DataRow label="Settles in" value="AUSD, a real dollar stablecoin on Monad Testnet" />
-            </Panel>
-          </div>
-          <Panel className={u.centerPanel}>
-            <AgentCardFace
-              last4="A55A"
-              agentName={AGENT.name}
-              persona={AGENT.persona}
-              dailyCap={50_000_000n}
-              remaining={30_000_000n}
-              revoked={false}
-              merchantCount={2}
-            />
-          </Panel>
-        </div>
+      <Shell>
+        <Landing />
       </Shell>
     );
   }
@@ -159,7 +114,7 @@ export default function HomePage() {
               ) : (
                 <Table head={["Merchant", "Amount", "Result"]}>
                   {recent.map((a) => (
-                    <tr key={a.id}>
+                    <tr key={a.id} className={a.ok ? u.railOk : u.railNo}>
                       <td>
                         <MerchantCell address={a.merchant} />
                       </td>

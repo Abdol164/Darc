@@ -1,0 +1,699 @@
+/* The landing page. Every value comes from the tokens in app/globals.css. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- the kicker: a ledger label, optionally led by a square mark -------------------- */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.square {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--cobalt);
+}
+.squareOk {
+  background: var(--approve-mark);
+}
+
+/* ---- hero: written inside the margin of a ledger page ------------------------------ */
+.hero {
+  position: relative;
+  padding: var(--sp-6) 0 var(--sp-16);
+}
+.ruled {
+  position: absolute;
+  inset: calc(-1 * var(--sp-12)) -50vw 0 -50vw;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+}
+/* The margin line runs the height of the opening, and the copy is written to its right. */
+.heroBody {
+  position: relative;
+  z-index: 1;
+  padding-left: 72px;
+}
+.heroBody::before {
+  content: "";
+  position: absolute;
+  left: 40px;
+  top: calc(-1 * var(--sp-6));
+  bottom: calc(-1 * var(--sp-16));
+  width: 1px;
+  background: var(--cobalt-edge);
+}
+
+.stampRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px 10px;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--approve-mark);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.folio {
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.title {
+  max-width: 15ch;
+  font-size: 72px;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.lede {
+  max-width: 56ch;
+  margin-top: var(--sp-6);
+  font-size: var(--fs-lg);
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-4);
+  margin-top: var(--sp-8);
+}
+.textLink {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.textLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fine {
+  margin-top: var(--sp-4);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.error {
+  max-width: 60ch;
+  margin-top: var(--sp-5);
+}
+.facts {
+  margin-top: var(--sp-12);
+}
+
+/* ---- the stage: a full-width band of sunk paper ------------------------------------- */
+.band {
+  position: relative;
+  overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  padding: var(--sp-16) calc(50vw - 50%);
+  background: var(--paper-sunk);
+  border-block: 1px solid var(--rule);
+}
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--sp-8) var(--sp-6);
+  align-items: start;
+}
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+.column > .kicker {
+  margin-bottom: 0;
+}
+.goal {
+  display: block;
+  font-weight: 500;
+}
+.goalAt {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.struck {
+  text-decoration: line-through;
+  text-decoration-color: var(--refuse-mark);
+  color: var(--ink-3);
+}
+.tableFoot {
+  padding: var(--sp-4) var(--sp-6);
+  background: var(--paper-sunk);
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ---- sections ----------------------------------------------------------------------- */
+.section {
+  padding-top: var(--sp-16);
+}
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4) var(--sp-8);
+  margin-bottom: var(--sp-8);
+}
+.h2 {
+  max-width: 22ch;
+  font-size: var(--fs-2xl);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.sectionNote {
+  max-width: 46ch;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---- steps -------------------------------------------------------------------------- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-6);
+}
+.step {
+  display: flex;
+  flex-direction: column;
+}
+.stepTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+.stepNo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: var(--paper-sunk);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--cobalt);
+}
+.stepTag {
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.h3 {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xl);
+}
+.stepBody {
+  flex: 1;
+  margin-bottom: var(--sp-5);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+.code {
+  display: block;
+  overflow-x: auto;
+  padding: var(--sp-3);
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+}
+
+/* ---- closing call: a ruled page with its margin line ---------------------------------- */
+.cta {
+  padding: var(--sp-10);
+  background:
+    linear-gradient(to right, transparent 23px, var(--cobalt-edge) 23px, var(--cobalt-edge) 24px, transparent 24px),
+    repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px),
+    var(--paper-sunk);
+}
+.ctaBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding-left: var(--sp-6);
+}
+.ctaText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 56ch;
+}
+.ctaText .kicker {
+  margin-bottom: 0;
+}
+.ctaActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.ctaFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-6);
+  margin-top: var(--sp-8);
+  padding-top: var(--sp-3);
+  padding-left: var(--sp-6);
+  border-top: 1px dashed var(--rule-strong);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---- footer ----------------------------------------------------------------------------- */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  margin-top: var(--sp-16);
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--rule);
+}
+.footBrand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.footName {
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1;
+}
+.footLine {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+}
+.footLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-6);
+  font-size: var(--fs-sm);
+}
+.network {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--approve);
+}
+
+/* ---- motion ---------------------------------------------------------------------------
+ * One vocabulary across the site: lines rise into place, the record writes itself, the card
+ * floats over turning rings. Everything here is local to this module, because CSS modules
+ * rename animation names.
+ */
+
+/* The opening lines up on load: the margin line draws down, then each line rises in turn. */
+.in {
+  animation: rise 760ms var(--ease) both;
+}
+.d1 {
+  animation-delay: 120ms;
+}
+.d2 {
+  animation-delay: 200ms;
+}
+.d3 {
+  animation-delay: 300ms;
+}
+.d4 {
+  animation-delay: 400ms;
+}
+.d5 {
+  animation-delay: 480ms;
+}
+.d6 {
+  animation-delay: 580ms;
+}
+.heroBody::before {
+  transform-origin: top;
+  animation: draw 1100ms var(--ease) both;
+}
+.ruled {
+  animation: appear 1200ms ease both;
+}
+.liveDot {
+  position: relative;
+}
+.liveDot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1px;
+  background: var(--approve-mark);
+  animation: ping 1.8s var(--ease) infinite;
+}
+
+/* The card floats over three slowly turning rings, the same linework as its face. */
+.cardStage {
+  position: relative;
+}
+.rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  pointer-events: none;
+  animation: spin 90s linear infinite;
+}
+.rings span {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+}
+.rings span:nth-child(1) {
+  inset: 0;
+  opacity: 0.6;
+}
+.rings span:nth-child(2) {
+  inset: 70px;
+  border-style: dashed;
+}
+.rings span:nth-child(3) {
+  inset: 140px;
+  opacity: 0.8;
+}
+.floating {
+  position: relative;
+  z-index: 1;
+  animation: float 7s ease-in-out infinite;
+}
+
+/* The record writes itself: each row posts, its verdict line draws, its badge is stamped. */
+.record.armed tbody tr {
+  opacity: 0;
+}
+.record.live tbody tr {
+  animation: post 560ms var(--ease) both;
+}
+.record.live tbody tr td:first-child {
+  animation: rail-in 600ms var(--ease) both;
+}
+.record.live tbody tr td:last-child > span {
+  animation: stamp-in 520ms var(--ease) both;
+}
+.record.live tbody tr:nth-child(1),
+.record.live tbody tr:nth-child(1) td:first-child {
+  animation-delay: 150ms;
+}
+.record.live tbody tr:nth-child(1) td:last-child > span {
+  animation-delay: 450ms;
+}
+.record.live tbody tr:nth-child(2),
+.record.live tbody tr:nth-child(2) td:first-child {
+  animation-delay: 750ms;
+}
+.record.live tbody tr:nth-child(2) td:last-child > span {
+  animation-delay: 1050ms;
+}
+.record.live tbody tr:nth-child(3),
+.record.live tbody tr:nth-child(3) td:first-child {
+  animation-delay: 1350ms;
+}
+.record.live tbody tr:nth-child(3) td:last-child > span {
+  animation-delay: 1650ms;
+}
+
+/* The ten checks run in order; nine pass, and the last one refuses. */
+.checks.live tbody tr {
+  animation: sweep 900ms ease both;
+}
+.checks.live tbody tr:nth-child(2) {
+  animation-delay: 140ms;
+}
+.checks.live tbody tr:nth-child(3) {
+  animation-delay: 280ms;
+}
+.checks.live tbody tr:nth-child(4) {
+  animation-delay: 420ms;
+}
+.checks.live tbody tr:nth-child(5) {
+  animation-delay: 560ms;
+}
+.checks.live tbody tr:nth-child(6) {
+  animation-delay: 700ms;
+}
+.checks.live tbody tr:nth-child(7) {
+  animation-delay: 840ms;
+}
+.checks.live tbody tr:nth-child(8) {
+  animation-delay: 980ms;
+}
+.checks.live tbody tr:nth-child(9) {
+  animation-delay: 1120ms;
+}
+.checks.live tbody tr:nth-child(10) {
+  animation: refuse 2800ms ease both;
+  animation-delay: 1260ms;
+}
+
+/* Sections rise in as they scroll into view. Browsers without scroll timelines show them as they are. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    .step:nth-child(2) {
+      animation-range: entry 10% entry 65%;
+    }
+    .step:nth-child(3) {
+      animation-range: entry 20% entry 75%;
+    }
+  }
+}
+
+.accent {
+  color: var(--cobalt);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes draw {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ping {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes post {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rail-in {
+  from {
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+}
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.4) rotate(-6deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.95) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sweep {
+  0% {
+    background-color: transparent;
+  }
+  35% {
+    background-color: var(--cobalt-wash);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes refuse {
+  0% {
+    background-color: transparent;
+  }
+  20%,
+  75% {
+    background-color: var(--refuse-wash);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@media (max-width: 1023px) {
+  .title {
+    font-size: var(--fs-3xl);
+  }
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* No margin line at phone width: there is no gutter for it to sit in. */
+  .heroBody {
+    padding-left: 0;
+  }
+  .heroBody::before {
+    display: none;
+  }
+  .title {
+    font-size: 44px;
+  }
+  .lede {
+    font-size: var(--fs-md);
+  }
+  .band {
+    padding-block: var(--sp-10);
+  }
+  .section {
+    padding-top: var(--sp-12);
+  }
+  .h2 {
+    font-size: 32px;
+  }
+  .cta {
+    padding: var(--sp-6) var(--sp-5);
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px),
+      var(--paper-sunk);
+  }
+  .ctaBody,
+  .ctaFoot {
+    padding-left: 0;
+  }
+}
