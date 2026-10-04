@@ -1,162 +1,274 @@
 .layout {
-  display: grid;
-  grid-template-columns: var(--rail) minmax(0, 1fr);
   min-height: 100vh;
+  background: var(--paper);
+  /* clip, not hidden: the hero's ruled lines bleed past the container, and the bar stays sticky */
+  overflow-x: clip;
 }
 
-.rail {
-  border-right: 1px solid var(--line);
-  background: var(--ink-850);
-  display: flex;
-  flex-direction: column;
-  padding: var(--s-4) var(--s-3);
+/* ---- top bar ------------------------------------------------------------------- */
+.topbar {
   position: sticky;
   top: 0;
-  height: 100vh;
+  z-index: 30;
+  background: color-mix(in oklab, var(--paper), transparent 15%);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--rule);
 }
-.brand {
-  padding: var(--s-2) var(--s-2) var(--s-5);
-}
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-.navItem {
+.topbarInner {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  font-size: var(--t-sm);
-  font-weight: 550;
-  transition: background 120ms ease, color 120ms ease;
+  gap: var(--sp-10);
+  max-width: var(--page-max);
+  height: var(--bar-h);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+.brand {
+  display: inline-flex;
+  flex: none;
+  color: var(--ink);
+}
+
+.nav {
+  display: flex;
+  align-self: stretch;
+  align-items: stretch;
+  flex: 1;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.navItem {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: -1px;
+  padding: 0 var(--sp-3);
+  border-bottom: 2px solid transparent;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--ink-3);
+  transition:
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
 }
 .navItem:hover {
-  background: var(--ink-700);
-  color: var(--text);
+  color: var(--ink);
 }
-.navActive {
-  background: var(--accent-dim);
-  color: var(--text);
-  font-weight: 650;
-}
-.navActive svg {
-  color: var(--accent);
-}
-.navIcon {
-  flex: none;
-  color: var(--text-dim);
-}
-.navSection {
-  font-size: var(--t-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-dim);
-  padding: var(--s-4) 10px var(--s-2);
-  font-weight: 650;
+.navActive,
+.navActive:hover {
+  color: var(--ink);
+  border-bottom-color: var(--cobalt);
 }
 
 .account {
-  border-top: 1px solid var(--line);
-  padding: var(--s-3) 10px 0;
-  margin-top: var(--s-3);
-}
-.accountRow {
   display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: var(--s-2);
-}
-.avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: linear-gradient(140deg, var(--accent), #2b4fd6);
   flex: none;
+  align-items: center;
+  gap: var(--sp-4);
 }
-.accountName {
-  font-size: var(--t-sm);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.accountChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 10px 5px 6px;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink);
+  transition: border-color var(--t-fast) var(--ease);
 }
-.accountMeta {
-  font-size: var(--t-xs);
-  color: var(--text-dim);
+.accountChip:hover {
+  color: var(--ink);
+  border-color: var(--cobalt-edge);
+}
+.accountChipActive {
+  border-color: var(--cobalt-edge);
+  background: var(--cobalt-wash);
+}
+/* The account mark is a tiny card, not a circle: the same notch as everything else. */
+.avatar {
+  flex: none;
+  width: 22px;
+  height: 15px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, var(--cobalt), var(--cobalt-press));
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 72% 100%, 0 100%);
 }
 .signOut {
+  padding: 0;
   background: none;
   border: none;
-  color: var(--text-dim);
-  font-size: var(--t-xs);
-  padding: 2px 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-3);
   cursor: pointer;
+  transition: color var(--t-fast) var(--ease);
 }
 .signOut:hover {
-  color: var(--declined);
+  color: var(--ink);
 }
-
-.main {
-  min-width: 0;
-  padding: var(--s-6) var(--s-6) var(--s-8);
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 18px 7px 14px;
+  background: var(--cobalt);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--on-cobalt);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-sm)), calc(100% - var(--notch-sm)) 100%, 0 100%);
+  transition: background-color var(--t-fast) var(--ease);
 }
-.header {
-  margin-bottom: var(--s-5);
+.signIn:hover {
+  background: var(--cobalt-hover);
+  color: var(--on-cobalt);
 }
-.title {
-  font-size: var(--t-2xl);
-  margin-bottom: 2px;
-}
-.subtitle {
-  color: var(--text-muted);
-  font-size: var(--t-base);
-  margin: 0;
-  max-width: 62ch;
-}
-
-.mobileBar,
-.mobileTop {
+.mobileAccount {
   display: none;
 }
 
-/* Phone: the rail becomes a bottom bar, and a compact top bar carries the brand. */
-@media (max-width: 860px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
+/* ---- page --------------------------------------------------------------------- */
+.main {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--sp-12) var(--gutter) 96px;
+}
+.header {
+  position: relative;
+  margin-bottom: var(--sp-8);
+}
+.headerRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+}
+.title {
+  font-size: var(--fs-2xl);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.subtitle {
+  max-width: 62ch;
+  margin-top: var(--sp-3);
+  font-size: var(--fs-lg);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+/* The front door: a display-size serif heading written on ledger paper. */
+.hero {
+  margin-bottom: var(--sp-12);
+  padding: var(--sp-8) 0 var(--sp-6);
+}
+.hero .title {
+  max-width: 14ch;
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.hero .subtitle {
+  max-width: 52ch;
+  margin-top: var(--sp-6);
+}
+.ruled {
+  position: absolute;
+  inset: -24px -48px -8px -40px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, transparent 23px, var(--cobalt-edge) 23px, var(--cobalt-edge) 24px, transparent 24px),
+    repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+  -webkit-mask-image: linear-gradient(to right, black 0%, black 45%, transparent 85%),
+    linear-gradient(to bottom, transparent 0%, black 18%, black 75%, transparent 100%);
+  mask-image: linear-gradient(to right, black 0%, black 45%, transparent 85%),
+    linear-gradient(to bottom, transparent 0%, black 18%, black 75%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.mobileBar {
+  display: none;
+}
+
+.min0 {
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .topbarInner,
+  .main {
+    padding-left: var(--gutter-md);
+    padding-right: var(--gutter-md);
   }
-  .rail {
+  .topbarInner {
+    gap: var(--sp-6);
+  }
+}
+
+/* Phone: the links move to a bottom bar; the top bar keeps the brand and the account. */
+@media (max-width: 860px) {
+  .topbarInner {
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 var(--gutter-sm);
+  }
+  .nav,
+  .account {
     display: none;
   }
-  .main {
-    padding: var(--s-4) var(--s-4) 86px;
+  .mobileAccount {
+    display: inline-flex;
+    font-size: var(--fs-sm);
+    font-weight: 500;
   }
-  .mobileTop {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--s-3) var(--s-4);
-    border-bottom: 1px solid var(--line);
-    background: var(--ink-850);
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  .mobileAddress {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 400;
+  }
+  .main {
+    padding: var(--sp-8) var(--gutter-sm) 104px;
+  }
+  .header {
+    margin-bottom: var(--sp-6);
+  }
+  .title {
+    font-size: 32px;
+  }
+  .subtitle {
+    font-size: var(--fs-md);
+  }
+  .hero {
+    margin-bottom: var(--sp-8);
+    padding-top: var(--sp-4);
+  }
+  .hero .title {
+    font-size: 44px;
+  }
+  /* No margin line at phone width: there is no gutter for it to sit in. */
+  .ruled {
+    inset: -16px -16px -8px -16px;
+    background: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
   }
   .mobileBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--ink-850);
-    border-top: 1px solid var(--line);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    z-index: 30;
+    background: color-mix(in oklab, var(--paper), transparent 8%);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+    border-top: 1px solid var(--rule);
   }
   .mobileItem {
     display: flex;
@@ -164,29 +276,16 @@
     align-items: center;
     gap: 3px;
     padding: 5px 2px;
-    color: var(--text-dim);
-    font-size: 10.5px;
-    font-weight: 600;
-    border-radius: var(--r-sm);
+    border-radius: var(--rd-1);
+    font-size: var(--fs-micro);
+    font-weight: 500;
+    color: var(--ink-3);
   }
-  .mobileActive {
-    color: var(--accent);
+  .mobileItem:hover {
+    color: var(--ink);
   }
-  .title {
-    font-size: var(--t-xl);
+  .mobileActive,
+  .mobileActive:hover {
+    color: var(--cobalt);
   }
-}
-
-.inherit {
-  color: inherit;
-}
-.min0 {
-  min-width: 0;
-}
-.headerRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--s-4);
-  flex-wrap: wrap;
 }

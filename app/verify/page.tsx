@@ -201,7 +201,7 @@ function VerifyInner() {
 
             <Panel
               title="Attestations, written by merchants"
-              note="The registry rejects feedback from whoever holds the agent's identity, and that is AgentCard's own contract — so we cannot write these rows."
+              note="The registry rejects feedback from whoever holds the agent's identity, and that is Darc's own contract — so we cannot write these rows."
               flush
             >
               {result.attestations.length === 0 ? (
@@ -209,7 +209,7 @@ function VerifyInner() {
               ) : (
                 <Table head={["Merchant", "Result", "Reason", "Score"]}>
                   {result.attestations.map((a) => (
-                    <tr key={`${a.client}-${a.index}`}>
+                    <tr key={`${a.client}-${a.index}`} className={a.verdict === "approved" ? u.railOk : u.railNo}>
                       <td>
                         <MerchantCell address={a.client} />
                       </td>
@@ -225,7 +225,7 @@ function VerifyInner() {
             </Panel>
 
             <Panel title="Cross-check" note="Our summary against the raw registry rows. They should agree, and you can see whether they do.">
-              <DataRow label="AgentCard reports" value={`${result.approved} approved, ${result.declined} refused`} />
+              <DataRow label="Darc reports" value={`${result.approved} approved, ${result.declined} refused`} />
               <DataRow label="Registry rows say" value={`${seenApproved} approved, ${seenDeclined} refused`} />
               <DataRow
                 label="Agreement"
@@ -242,7 +242,7 @@ function VerifyInner() {
         {result && !result.found && (
           <Panel>
             <Empty title="Nothing on record">
-              This address has never been issued an AgentCard. That is not a red flag on its own — it
+              This address has never been issued an agent card. That is not a red flag on its own — it
               simply means there is no history to check.
             </Empty>
           </Panel>

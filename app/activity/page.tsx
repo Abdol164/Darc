@@ -141,7 +141,7 @@ export default function ActivityPage() {
           ) : (
             <Table head={["Agent", "Merchant", "Result", "Reason", "Amount", "When", "Tx"]}>
               {filtered.map((r) => (
-                <tr key={r.key}>
+                <tr key={r.key} className={r.verdict === "approved" ? u.railOk : u.railNo}>
                   <td>
                     {r.card ? (
                       <Link href={`/cards/${r.card.cardId}`} className={u.linkStrong}>

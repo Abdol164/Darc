@@ -267,7 +267,7 @@ async function main() {
     });
     // Auth-agnostic markers: a signed-out Home has no "Overview" heading, and waiting for one
     // is what hung an earlier run.
-    for (const [path, marker] of [["/", "AgentCard"], ["/cards", "Cards"], ["/activity", "Activity"]] as const) {
+    for (const [path, marker] of [["/", "Darc"], ["/cards", "Cards"], ["/activity", "Activity"]] as const) {
       await go(path, marker);
       const nav = await ev(
         "(() => { const bars = [...document.querySelectorAll('nav')].map(n => getComputedStyle(n).display); return JSON.stringify(bars); })()",

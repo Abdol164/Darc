@@ -164,7 +164,7 @@ export default function CardsPage() {
             <p className={u.lead}>
               Cards settle in <strong>AUSD</strong>, a real dollar stablecoin on Monad Testnet — not
               a token we minted. Claim some from the public faucet and approve a spending limit for
-              AgentCard. The approval is bounded at {fmtUsd(APPROVAL)} on purpose: an unlimited one
+              Darc. The approval is bounded at {fmtUsd(APPROVAL)} on purpose: an unlimited one
               would sit above every card&apos;s limit.
             </p>
             <Button variant="primary" onClick={prepare} disabled={!!busy}>

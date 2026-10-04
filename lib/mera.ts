@@ -106,8 +106,8 @@ export async function openOwnerSession(
 
   if (mode === "create") {
     const created = await createPasskeyWithPrfOutput({
-      rp: { id: rpId, name: "AgentCard" },
-      user: { name: "AgentCard owner", displayName: "AgentCard owner" },
+      rp: { id: rpId, name: "Darc" },
+      user: { name: "Darc owner", displayName: "Darc owner" },
     });
     prfOutput = created.prfOutput;
     credentialId = created.credentialId;
@@ -149,7 +149,7 @@ export function explainError(err: unknown): string {
   if (isMeraError(err)) {
     switch (err.code) {
       case "PRF_UNAVAILABLE":
-        return "This passkey provider does not support the WebAuthn PRF extension, which AgentCard needs to derive your account. Desktop Chrome passkeys saved to the local profile are the usual cause. Use iCloud Keychain, 1Password, or Google Password Manager instead.";
+        return "This passkey provider does not support the WebAuthn PRF extension, which Darc needs to derive your account. Desktop Chrome passkeys saved to the local profile are the usual cause. Use iCloud Keychain, 1Password, or Google Password Manager instead.";
       case "PASSKEY_OPERATION_FAILED":
         return "The passkey prompt was dismissed or failed. Try again.";
       case "CRYPTO_UNAVAILABLE":

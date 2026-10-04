@@ -127,7 +127,7 @@ export default function SettingsPage() {
 
         <Panel title="Need a different passkey provider?">
           <p className={u.leadTight}>
-            AgentCard needs a provider that supports the WebAuthn PRF extension: iCloud Keychain,
+            Darc needs a provider that supports the WebAuthn PRF extension: iCloud Keychain,
             1Password, or Google Password Manager. Passkeys saved only to a desktop Chrome profile
             cannot derive an account, and sign-in will tell you so.
           </p>

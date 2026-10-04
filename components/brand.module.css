@@ -4,9 +4,35 @@
   gap: 9px;
 }
 .name {
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  color: var(--ink);
 }
-.nameMuted {
-  color: var(--text-muted);
+
+/* Mark fills, as classes so the SVG reads the tokens. */
+.stopA {
+  stop-color: var(--cobalt);
+}
+.stopB {
+  stop-color: var(--cobalt-press);
+}
+.chip {
+  fill: var(--paper-raised);
+  fill-opacity: 0.9;
+}
+.corner {
+  fill: var(--cobalt-edge);
+}
+.inverseFace {
+  fill: var(--paper);
+}
+.inverseChip {
+  fill: var(--ink);
+  fill-opacity: 0.55;
+}
+.inverseCorner {
+  fill: var(--paper);
+  fill-opacity: 0.5;
 }

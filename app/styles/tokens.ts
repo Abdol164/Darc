@@ -4,12 +4,12 @@
  * these names must stay in step with that file.
  */
 export const STATUS = {
-  active: { label: "Active", color: "var(--ok)", bg: "var(--ok-dim)" },
-  approved: { label: "Approved", color: "var(--ok)", bg: "var(--ok-dim)" },
-  declined: { label: "Declined", color: "var(--declined)", bg: "var(--declined-dim)" },
-  revoked: { label: "Revoked", color: "var(--revoked)", bg: "var(--revoked-dim)" },
-  pending: { label: "Pending", color: "var(--pending)", bg: "var(--pending-dim)" },
-  expired: { label: "Expired", color: "var(--text-dim)", bg: "var(--ink-700)" },
+  active: { label: "Active", color: "var(--approve)", bg: "var(--approve-wash)" },
+  approved: { label: "Approved", color: "var(--approve)", bg: "var(--approve-wash)" },
+  declined: { label: "Declined", color: "var(--refuse)", bg: "var(--refuse-wash)" },
+  revoked: { label: "Revoked", color: "var(--paper-raised)", bg: "var(--void)" },
+  pending: { label: "Pending", color: "var(--hold)", bg: "var(--hold-wash)" },
+  expired: { label: "Expired", color: "var(--ink-3)", bg: "var(--paper-sunk)" },
 } as const;
 
 export type StatusKind = keyof typeof STATUS;

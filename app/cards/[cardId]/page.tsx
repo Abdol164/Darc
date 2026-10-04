@@ -314,7 +314,7 @@ export default function CardDetailPage() {
               {attestations.map((a, i) => {
                 const local = attempts.find((x) => x.merchant.toLowerCase() === a.client.toLowerCase() && (a.verdict === "approved") === x.ok);
                 return (
-                  <tr key={`${a.client}-${a.index}`}>
+                  <tr key={`${a.client}-${a.index}`} className={a.verdict === "approved" ? u.railOk : u.railNo}>
                     <td>
                       <MerchantCell address={a.client} />
                     </td>
