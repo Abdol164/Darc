@@ -1,228 +1,328 @@
+/* ---- metrics: serif figures under ledger labels ----------------------------------- */
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--s-3);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4);
 }
 .stat {
-  background: var(--ink-800);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--s-4);
+  position: relative;
+  padding: var(--sp-5) var(--sp-6);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-2);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-sm)), calc(100% - var(--notch-sm)) 100%, 0 100%);
+}
+.stat::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: var(--notch-sm);
+  height: var(--notch-sm);
+  background: linear-gradient(to top left, transparent 50%, var(--rule) 50%, var(--rule) calc(50% + 1px), transparent calc(50% + 1px));
 }
 .statLabel {
-  font-size: var(--t-xs);
+  margin-bottom: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
-  font-weight: 650;
-  margin-bottom: 6px;
+  color: var(--ink-3);
 }
 .statValue {
-  font-size: var(--t-2xl);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-family: var(--serif);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  color: var(--ink);
 }
 .statNote {
-  font-size: var(--t-xs);
-  color: var(--text-dim);
-  margin-top: 3px;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
 }
 
+/* ---- layout ------------------------------------------------------------------------- */
+/* Slightly uneven, so the second column (tables, the agent run) gets the room. */
 .grid2 {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--s-4);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--sp-6);
 }
 .stack {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
+  gap: var(--sp-6);
 }
 .rowBetween {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s-3);
   flex-wrap: wrap;
+  gap: var(--sp-3);
 }
 .btnRow {
   display: flex;
-  gap: var(--s-2);
   flex-wrap: wrap;
+  gap: var(--sp-2);
 }
 
+/* ---- merchants ---------------------------------------------------------------------- */
 .avatarSm {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--r-sm);
   display: grid;
   place-items: center;
-  font-size: 10.5px;
-  font-weight: 750;
-  color: #fff;
   flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--on-cobalt);
+}
+.tint0 {
+  background: var(--merchant-0);
+}
+.tint1 {
+  background: var(--merchant-1);
+}
+.tint2 {
+  background: var(--merchant-2);
+}
+.tintNone {
+  background: var(--ink-3);
 }
 .merchantCell {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: var(--sp-3);
   min-width: 0;
 }
 .merchantName {
-  font-weight: 600;
-  white-space: nowrap;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--ink);
 }
-.merchantSells {
-  font-size: var(--t-xs);
-  color: var(--text-dim);
+.merchantSells,
+.merchantSellsBlock {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
 }
-
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--s-5);
-}
-.cardLink {
-  color: inherit;
-  display: block;
-  transition: transform 160ms ease;
-}
-.cardLink:hover {
-  transform: translateY(-3px);
-  color: inherit;
-}
-
-.transcript {
-  font-family: var(--mono);
-  font-size: 12.5px;
-  line-height: 1.6;
-  max-height: 340px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.line {
-  display: flex;
-  gap: 9px;
-  animation: fade-in 220ms ease;
-}
-.who {
-  flex: none;
-  width: 48px;
-  color: var(--text-dim);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding-top: 1px;
-}
-.lineOk {
-  color: var(--ok);
-}
-.lineDeclined {
-  color: var(--declined);
-}
-.lineNote {
-  color: var(--text-muted);
-}
-
-.taskList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-}
-.task {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--ink-850);
-  font-size: var(--t-sm);
-}
-.taskGoal {
-  font-weight: 600;
-}
-.taskMeta {
-  font-size: var(--t-xs);
-  color: var(--text-dim);
-}
-
-.field {
-  display: block;
-  margin-bottom: var(--s-4);
-}
-.fieldLabel {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--t-sm);
-  color: var(--text-muted);
-  margin-bottom: 7px;
-}
-.check {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  padding: 9px var(--s-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  margin-bottom: 6px;
-  cursor: pointer;
-  font-size: var(--t-sm);
-  background: var(--ink-850);
-}
-.checkOn {
-  border-color: var(--accent);
-  background: var(--accent-dim);
-}
-.input {
-  width: 100%;
-  padding: 10px var(--s-3);
-  border-radius: var(--r-sm);
-  border: 1px solid var(--line);
-  background: var(--ink-850);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: var(--t-sm);
-}
-
-@media (max-width: 860px) {
-  .grid2 {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .cardGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Merchant tints as classes: the set is fixed, so no computed style is needed. */
-.tint0 { background: #4d7cfe; }
-.tint1 { background: #34d399; }
-.tint2 { background: #a78bfa; }
-.tintNone { background: var(--ink-600); }
-
 .merchantSellsBlock {
   display: block;
-  font-size: var(--t-xs);
-  color: var(--text-dim);
 }
+
 .addressLink {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+}
+.addressLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .monoText {
   font-family: var(--mono);
+  font-size: 13px;
 }
 .min0 {
   min-width: 0;
 }
 
+/* ---- cards -------------------------------------------------------------------------- */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-10) var(--sp-6);
+}
+.cardLink {
+  display: block;
+  color: inherit;
+}
+.cardLink:hover {
+  color: inherit;
+}
+
+/* ---- agent run ---------------------------------------------------------------------- */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.task {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 14px;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-size: var(--fs-sm);
+}
+.taskGoal {
+  font-weight: 500;
+  color: var(--ink);
+}
+.taskMeta {
+  font-size: var(--fs-xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The transcript is the ledger itself: mono on sunk paper, each line ruled by its verdict. */
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+.line {
+  display: flex;
+  gap: var(--sp-3);
+  padding-left: 10px;
+  border-left: 2px solid transparent;
+  animation: fade-in 220ms var(--ease);
+}
+.line:has(.lineOk) {
+  border-left-color: var(--approve-mark);
+}
+.line:has(.lineDeclined) {
+  border-left-color: var(--refuse-mark);
+}
+.who {
+  flex: none;
+  width: 52px;
+  padding-top: 2px;
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.lineOk {
+  color: var(--approve);
+}
+.lineDeclined {
+  color: var(--refuse);
+}
+.lineNote {
+  color: var(--ink-3);
+}
+
+/* ---- forms -------------------------------------------------------------------------- */
+.field {
+  display: block;
+  margin-bottom: var(--sp-6);
+}
+.fieldLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.fieldLabel strong {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  padding: 10px var(--sp-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+.check:hover {
+  border-color: var(--rule-strong);
+}
+.checkOn,
+.checkOn:hover {
+  border-color: var(--cobalt-edge);
+  background: var(--cobalt-wash);
+}
+.input {
+  width: 100%;
+  padding: 10px var(--sp-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+.input::placeholder {
+  color: var(--ink-3);
+}
+.input:focus-visible {
+  outline: none;
+  border-color: var(--cobalt);
+  box-shadow: var(--focus);
+}
 .formRowWide {
   display: flex;
-  gap: var(--s-2);
+  gap: var(--sp-2);
+}
+
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .grid2,
+  .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 639px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+  .stat {
+    padding: var(--sp-4);
+  }
+  .statValue {
+    font-size: 32px;
+  }
 }

@@ -1,72 +1,129 @@
 /*
- * AgentCard design tokens.
+ * Darc — "Ledger" design tokens.
  *
- * One palette, one spacing scale, one type scale. Every component reads from here, so a
- * colour exists in exactly one place. Deliberately not default-framework blue/grey: the
- * base is a deep ink navy with a single restrained accent, so status colours are the only
- * saturated things on screen and therefore carry meaning.
+ * The idea: an agent's spending is a notarised record, so the product reads like one. Warm
+ * paper, ink, one cobalt accent for anything you can act on, serif headings over a precise
+ * sans, and ledger-style mono labels. Two signatures carry the identity:
+ *
+ *   the notch   — the clipped corner from the Darc mark, cut into cards, panels and the
+ *                 primary button;
+ *   the verdict — a green or red rule down the edge of every record, because refusals are
+ *                 kept alongside approvals.
+ *
+ * Every colour, size and shadow lives in this block. Components only ever read var(--name).
  */
 :root {
-  /* Surfaces, darkest to lightest */
-  --ink-900: #0a0e17;
-  --ink-850: #0d121c;
-  --ink-800: #111823;
-  --ink-700: #161f2d;
-  --ink-600: #1d283a;
-  --line: #222d40;
-  --line-strong: #2d3a51;
+  /* Paper — the canvas and its two neighbours */
+  --paper: #fbfaf7;
+  --paper-raised: #ffffff;
+  --paper-sunk: #f3f1ec;
 
-  /* Text */
-  --text: #e8ecf4;
-  --text-muted: #94a1b8;
-  --text-dim: #6a768d;
+  /* Ink — three weights of text */
+  --ink: #10182b;
+  --ink-2: #3a4458;
+  --ink-3: #646c7e;
 
-  /* One accent, used only for primary actions and focus */
-  --accent: #4d7cfe;
-  --accent-hover: #5f8aff;
-  --accent-dim: #1e2d55;
+  /* Rules — hairlines, warm to sit on paper */
+  --rule: #e7e3da;
+  --rule-strong: #d3cdbf;
 
-  /* Semantic status — distinct hues, not shades of one colour */
-  --ok: #34d399;
-  --ok-dim: #10291f;
-  --declined: #fb7185;
-  --declined-dim: #2c1419;
-  --revoked: #a78bfa;
-  --revoked-dim: #1f1830;
-  --pending: #fbbf24;
-  --pending-dim: #2a1f0a;
+  /* Cobalt — the only colour that means "you can act on this" */
+  --cobalt: #2446f5;
+  --cobalt-hover: #1b37d1;
+  --cobalt-press: #142a9e;
+  --cobalt-wash: color-mix(in oklab, var(--cobalt), transparent 93%);
+  --cobalt-edge: color-mix(in oklab, var(--cobalt), transparent 65%);
+  --on-cobalt: #ffffff;
 
-  /* Spacing scale */
-  --s-1: 4px;
-  --s-2: 8px;
-  --s-3: 12px;
-  --s-4: 16px;
-  --s-5: 24px;
-  --s-6: 32px;
-  --s-7: 48px;
-  --s-8: 64px;
+  /*
+   * Verdicts. Each has a text tone (4.5:1 on its wash at 12px), a brighter mark for dots and
+   * rules, and a wash/edge pair for badges. Void is the revoked state: solid ink, a stamp.
+   */
+  --approve: #13795b;
+  --approve-mark: #1fa67a;
+  --approve-wash: color-mix(in oklab, var(--approve-mark), transparent 88%);
+  --approve-edge: color-mix(in oklab, var(--approve-mark), transparent 60%);
+  --refuse: #b42d26;
+  --refuse-mark: #e0473d;
+  --refuse-wash: color-mix(in oklab, var(--refuse-mark), transparent 91%);
+  --refuse-edge: color-mix(in oklab, var(--refuse-mark), transparent 62%);
+  --hold: #8f5d0f;
+  --hold-mark: #e2a93b;
+  --hold-wash: color-mix(in oklab, var(--hold-mark), transparent 86%);
+  --hold-edge: color-mix(in oklab, var(--hold-mark), transparent 55%);
+  --void: var(--ink);
+  /* Verdict marks on a cobalt surface (the sign-in stage), where the usual marks are too dark */
+  --signal: #6ff0bf;
+  --signal-refuse: #ffb4ab;
 
-  /* Type scale */
-  --t-xs: 11.5px;
-  --t-sm: 13px;
-  --t-base: 14.5px;
-  --t-lg: 17px;
-  --t-xl: 22px;
-  --t-2xl: 28px;
+  /* Card stock — the physical card is ink, lit by cobalt */
+  --card-hi: #1c2a4d;
+  --card-lo: #090e1c;
+  --card-line: rgba(255, 255, 255, 0.04);
+  --card-void-hi: #3a3f4a;  /* revoked stock: the same card, drained of colour */
+  --card-void-lo: #161a22;
+  --chip-light: #ecdcae;
+  --chip-mid: #c9a85a;
+  --chip-dark: #a8873e;
 
-  /* Radii + shadows */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 20px;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-3: 0 14px 40px rgba(0, 0, 0, 0.45);
+  /* Merchant marks — hues that carry no verdict */
+  --merchant-0: var(--cobalt);
+  --merchant-1: #0e7490;
+  --merchant-2: var(--ink);
 
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Type — families are loaded by next/font in app/layout.tsx */
+  --serif: var(--font-instrument), "Iowan Old Style", Georgia, serif;
+  --sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
-  --rail: 232px;
+  --fs-micro: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 24px;
+  --fs-2xl: 40px;
+  --fs-3xl: 64px;
+
+  /* Space */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Shape */
+  --rd-1: 3px;
+  --rd-2: 6px;
+  --rd-3: 10px;
+  --rd-round: 999px;
+  --notch: 14px;
+  --notch-sm: 8px;
+  --notch-lg: 24px;
+
+  /* Lift — ink-tinted, with a cobalt underglow on the card */
+  --lift-1: 0 1px 2px rgba(16, 24, 43, 0.06);
+  --lift-2: 0 14px 30px -14px rgba(16, 24, 43, 0.22), 0 4px 10px -6px rgba(16, 24, 43, 0.1);
+  --lift-card: drop-shadow(0 22px 24px rgba(16, 24, 43, 0.26)) drop-shadow(0 6px 10px rgba(36, 70, 245, 0.14));
+  --lift-card-hover: drop-shadow(0 30px 32px rgba(16, 24, 43, 0.3)) drop-shadow(0 8px 14px rgba(36, 70, 245, 0.2));
+  --focus: 0 0 0 2px var(--paper-raised), 0 0 0 4px var(--cobalt);
+
+  /* Motion */
+  --t-fast: 140ms;
+  --t-base: 220ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layout */
+  --page-max: 1120px;
+  --gutter: 32px;
+  --gutter-md: 24px;
+  --gutter-sm: 16px;
+  --bar-h: 64px;
 }
 
 * {
@@ -80,73 +137,77 @@ body {
 }
 
 body {
-  background: var(--ink-900);
-  color: var(--text);
-  font: var(--t-base) / 1.55 var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-md);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
-a:hover {
-  color: var(--accent-hover);
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
 h2,
 h3 {
   margin: 0;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-family: var(--serif);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+h1 em,
+h2 em {
+  font-style: italic;
+  color: var(--cobalt);
 }
 
-button {
+p {
+  margin: 0;
+}
+
+strong {
+  font-weight: 600;
+}
+
+a {
+  color: var(--cobalt);
+  text-decoration: none;
+  transition: color var(--t-fast) var(--ease);
+}
+a:hover {
+  color: var(--cobalt-hover);
+}
+/* Plain text links underline on hover; links styled as something else do not. */
+a:not([class]):hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+button,
+input {
   font: inherit;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--cobalt);
   outline-offset: 2px;
 }
 
-input[type="range"] {
-  accent-color: var(--accent);
+::selection {
+  background: color-mix(in oklab, var(--cobalt), transparent 82%);
 }
 
-/* A new card is a small moment: reveal it rather than popping it in. */
-@keyframes card-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+input[type="range"],
+input[type="checkbox"] {
+  accent-color: var(--cobalt);
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
-}
+/*
+ * Keyframes live in the CSS module that uses them: CSS modules rename animation names, so a
+ * keyframe declared here would never be found by a component.
+ */
 
 @media (prefers-reduced-motion: reduce) {
   *,

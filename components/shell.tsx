@@ -1,42 +1,45 @@
 "use client";
 
 /**
- * The product shell: a persistent left rail on desktop, a bottom bar on phones, and an
- * account block that shows who is signed in. Every screen renders inside this, so the
+ * The product shell: a sticky, blurred top bar on desktop, a bottom bar on phones, and an
+ * account control that shows who is signed in. Every screen renders inside this, so the
  * product has a frame rather than being a set of standalone pages.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Wordmark, Mark } from "./brand";
-import { ActivityIcon, AgentsIcon, CardsIcon, HomeIcon, SettingsIcon, VerifyIcon } from "./icons";
+import { ActivityIcon, AgentsIcon, CardsIcon, HomeIcon, VerifyIcon } from "./icons";
 import { useOwner } from "@/lib/owner-context";
 import s from "./shell.module.css";
 
+/** Account lives behind the address control on the right, so it is not repeated here. */
 const NAV = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/cards", label: "Cards", icon: CardsIcon },
   { href: "/activity", label: "Activity", icon: ActivityIcon },
   { href: "/agents", label: "Agents", icon: AgentsIcon },
-] as const;
-
-const PUBLIC_NAV = [
   { href: "/verify", label: "Verify", icon: VerifyIcon },
-  { href: "/settings", label: "Account", icon: SettingsIcon },
 ] as const;
 
-/** Phones get the five most-used destinations; Account lives on the Home screen there. */
-const MOBILE_NAV = [...NAV, PUBLIC_NAV[0]];
+const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 export function Shell({
   title,
   subtitle,
   action,
+  hero,
   children,
 }: {
-  title: string;
+  /**
+   * A string, or a node when part of it is set in the italic accent (<em>). Leave it out
+   * when the page brings its own opening, as the landing page does.
+   */
+  title?: ReactNode;
   subtitle?: string;
   action?: ReactNode;
+  /** Display-size heading on ruled ledger lines, for the signed-out front door. */
+  hero?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -45,86 +48,68 @@ export function Shell({
 
   return (
     <div className={s.layout}>
-      <aside className={s.rail}>
-        <Link href="/" className={`${s.brand} ${s.inherit}`}>
-          <Wordmark />
-        </Link>
-
-        <nav className={s.nav}>
-          {NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
-              <span className={s.navIcon}>
-                <Icon />
-              </span>
-              {label}
-            </Link>
-          ))}
-
-          <div className={s.navSection}>Public</div>
-          {PUBLIC_NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
-              <span className={s.navIcon}>
-                <Icon />
-              </span>
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className={s.account}>
-          {owner ? (
-            <>
-              <div className={s.accountRow}>
-                <span className={s.avatar} />
-                <div className={s.min0}>
-                  <div className={s.accountName}>
-                    {owner.slice(0, 6)}…{owner.slice(-4)}
-                  </div>
-                  <div className={s.accountMeta}>Passkey account</div>
-                </div>
-              </div>
-              <button className={s.signOut} onClick={signOut}>
-                Sign out
-              </button>
-            </>
-          ) : (
-            <div className={s.accountMeta}>Not signed in</div>
-          )}
-        </div>
-      </aside>
-
-      <div className={s.min0}>
-        <div className={s.mobileTop}>
-          <Link href="/" className={s.inherit}>
-            <Wordmark size={19} />
+      <header className={s.topbar}>
+        <div className={s.topbarInner}>
+          <Link href="/" className={s.brand}>
+            <Wordmark size={22} />
           </Link>
-          <Link href="/settings" className={s.accountMeta}>
-            {owner ? `${owner.slice(0, 6)}…${owner.slice(-4)}` : "Sign in"}
+
+          <nav className={s.nav}>
+            {NAV.map(({ href, label }) => (
+              <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className={s.account}>
+            {owner ? (
+              <>
+                <Link href="/settings" className={`${s.accountChip} ${isActive("/settings") ? s.accountChipActive : ""}`}>
+                  <span className={s.avatar} />
+                  {short(owner)}
+                </Link>
+                <button className={s.signOut} onClick={signOut}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link href="/sign-in" className={s.signIn}>
+                Sign in
+              </Link>
+            )}
+          </div>
+
+          <Link href={owner ? "/settings" : "/sign-in"} className={`${s.mobileAccount} ${owner ? s.mobileAddress : ""}`}>
+            {owner ? short(owner) : "Sign in"}
           </Link>
         </div>
+      </header>
 
-        <main className={s.main}>
-          <header className={s.header}>
+      <main className={s.main}>
+        {title && (
+          <header className={`${s.header} ${hero ? s.hero : ""}`}>
+            {hero && <div className={s.ruled} aria-hidden />}
             <div className={s.headerRow}>
-              <div>
+              <div className={s.min0}>
                 <h1 className={s.title}>{title}</h1>
                 {subtitle && <p className={s.subtitle}>{subtitle}</p>}
               </div>
               {action}
             </div>
           </header>
-          {children}
-        </main>
+        )}
+        {children}
+      </main>
 
-        <nav className={s.mobileBar}>
-          {MOBILE_NAV.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className={`${s.mobileItem} ${isActive(href) ? s.mobileActive : ""}`}>
-              <Icon size={19} />
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+      <nav className={s.mobileBar}>
+        {NAV.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={`${s.mobileItem} ${isActive(href) ? s.mobileActive : ""}`}>
+            <Icon size={19} />
+            {label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

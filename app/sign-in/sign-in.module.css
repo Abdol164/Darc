@@ -1,0 +1,779 @@
+/*
+ * Sign in. The one screen where cobalt is a surface rather than an accent: the stage on the
+ * left is the brand's colour at full value, everything on it is white or a white tint, and the
+ * paper side on the right keeps the usual rules.
+ */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+/* ---- the cobalt stage --------------------------------------------------------------- */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  overflow: hidden;
+  padding: var(--sp-12);
+  background: var(--cobalt);
+  color: var(--on-cobalt);
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(color-mix(in oklab, var(--on-cobalt), transparent 78%) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.55;
+}
+
+/* Two sets of rings turning in opposite directions, like the linework on the card. */
+.orbit {
+  position: absolute;
+  pointer-events: none;
+}
+.orbitA {
+  top: -96px;
+  right: -96px;
+  width: 540px;
+  height: 540px;
+  animation: spin 48s linear infinite;
+}
+.orbitB {
+  bottom: -128px;
+  left: -128px;
+  width: 620px;
+  height: 620px;
+  animation: spin 64s linear infinite reverse;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 85%);
+}
+.ringDash {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--on-cobalt), transparent 90%);
+}
+.inset1 {
+  inset: 24px;
+}
+.inset2 {
+  inset: 64px;
+}
+.inset3 {
+  inset: 112px;
+}
+.inset4 {
+  inset: 160px;
+  border-color: color-mix(in oklab, var(--on-cobalt), transparent 75%);
+}
+.inset5 {
+  inset: 144px;
+  border-color: color-mix(in oklab, var(--on-cobalt), transparent 80%);
+}
+.node {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--on-cobalt);
+  box-shadow: 0 0 8px var(--on-cobalt);
+}
+.nodeSmall {
+  width: 4px;
+  height: 4px;
+  box-shadow: none;
+  opacity: 0.8;
+}
+.nodeA {
+  top: 48px;
+  left: 50%;
+}
+.nodeB {
+  right: 80px;
+  bottom: 64px;
+}
+.nodeC {
+  top: 33%;
+  right: 56px;
+}
+.glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  margin: -250px 0 0 -250px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 88%);
+  filter: blur(64px);
+  pointer-events: none;
+  animation: breathe 6s ease-in-out infinite;
+}
+
+.stageTop {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.brand,
+.brand:hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--on-cobalt);
+}
+.brandName {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 85%);
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 70%);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--on-cobalt);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 14px 5px 10px;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 88%);
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 72%);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-sm)), calc(100% - var(--notch-sm)) 100%, 0 100%);
+}
+.ping {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--signal);
+}
+.ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1px;
+  background: var(--signal);
+  animation: ping 1.8s var(--ease) infinite;
+}
+
+.stageBody {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.kicker {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 3px 10px;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 85%);
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 72%);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.square {
+  width: 6px;
+  height: 6px;
+  background: var(--on-cobalt);
+}
+.stageTitle {
+  font-size: 44px;
+  line-height: 1.1;
+  color: var(--on-cobalt);
+}
+.stageLede {
+  max-width: 44ch;
+  margin-top: calc(-1 * var(--sp-2));
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: color-mix(in oklab, var(--on-cobalt), transparent 12%);
+}
+
+/* The card floats; a soft white halo sits behind it. */
+.float {
+  position: relative;
+  animation: float 7s ease-in-out infinite;
+}
+.float::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--rd-3);
+  background: color-mix(in oklab, var(--on-cobalt), transparent 82%);
+  filter: blur(18px);
+}
+.card {
+  position: relative;
+  aspect-ratio: 1.72;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 22px;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 90%);
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 68%);
+  border-radius: var(--rd-3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-lg)), calc(100% - var(--notch-lg)) 100%, 0 100%);
+}
+.card::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: var(--notch-lg);
+  height: var(--notch-lg);
+  background: linear-gradient(
+    to top left,
+    transparent 50%,
+    color-mix(in oklab, var(--on-cobalt), transparent 68%) 50%,
+    color-mix(in oklab, var(--on-cobalt), transparent 68%) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+.cardRings {
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 85%);
+  pointer-events: none;
+}
+.cardRings::after {
+  content: "";
+  position: absolute;
+  inset: -32px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in oklab, var(--on-cobalt), transparent 90%);
+}
+.cardRow {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chipGold {
+  width: 36px;
+  height: 26px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--chip-light), var(--chip-mid) 55%, var(--chip-light));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--chip-dark), transparent 40%);
+}
+.cardRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-1);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  background: color-mix(in oklab, var(--card-lo), transparent 72%);
+  border: 1px solid color-mix(in oklab, var(--signal), transparent 55%);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--signal);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.cardMeta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.cardNumber {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+}
+.cardSub {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-1);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+.cardFoot {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 80%);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+.tick {
+  font-weight: 600;
+  color: var(--signal);
+}
+.cross {
+  font-weight: 600;
+  color: var(--signal-refuse);
+}
+
+/* The record writes itself, one verdict at a time. */
+.ticker {
+  position: relative;
+  padding: 14px;
+  background: color-mix(in oklab, var(--on-cobalt), transparent 90%);
+  border: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 80%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.tickerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 85%);
+}
+.tickerTitle {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.diamond {
+  opacity: 0.8;
+}
+.tickerLines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+.tickerLine {
+  display: flex;
+  gap: var(--sp-2);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 420ms var(--ease),
+    transform 420ms var(--ease);
+}
+.shown {
+  opacity: 1;
+  transform: none;
+}
+
+.stageFoot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-4);
+  border-top: 1px solid color-mix(in oklab, var(--on-cobalt), transparent 80%);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--on-cobalt), transparent 15%);
+}
+
+/* ---- the paper side ------------------------------------------------------------------- */
+.paper {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  padding: var(--sp-12) var(--sp-16);
+  background: var(--paper);
+}
+.paperTop,
+.paperFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.paperTop {
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--rule);
+}
+.paperFoot {
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--rule);
+}
+.online {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.onlineDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--approve-mark);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.ink {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.formWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.formKicker,
+.footMark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.formKicker {
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+}
+.squareCobalt {
+  width: 6px;
+  height: 6px;
+  background: var(--cobalt);
+}
+.title {
+  font-size: 52px;
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+.lede {
+  margin-top: calc(-1 * var(--sp-2));
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+}
+.tab {
+  padding: 10px 12px;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+.tab:hover {
+  color: var(--ink);
+}
+.tab:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: -2px;
+}
+.tabOn,
+.tabOn:hover {
+  background: var(--paper-raised);
+  font-weight: 600;
+  color: var(--ink);
+  box-shadow: var(--lift-1);
+}
+
+/* What the passkey ceremony will do, as receipt lines. Re-keyed per mode so it fades in. */
+.receipt {
+  border-top: 1px dashed var(--rule-strong);
+  animation: fade-in 320ms var(--ease);
+}
+.receiptRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--rule-strong);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+.receiptLabel {
+  flex: none;
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.divider {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--rule-strong);
+}
+.divider span {
+  position: relative;
+  padding: 0 var(--sp-3);
+  background: var(--paper);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.secondary {
+  display: flex;
+  justify-content: center;
+  padding: 12px var(--sp-4);
+  background: var(--paper-raised);
+  border: 1px solid var(--cobalt-edge);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--cobalt);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-sm)), calc(100% - var(--notch-sm)) 100%, 0 100%);
+  transition: background-color var(--t-fast) var(--ease);
+}
+.secondary:hover {
+  background: var(--cobalt-wash);
+}
+
+.advisory {
+  padding: 14px var(--sp-4);
+  background: var(--paper-sunk);
+  box-shadow: inset 3px 0 0 var(--cobalt);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.advisoryTitle {
+  margin-bottom: var(--sp-1);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--rule-strong);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  color: var(--ink-3);
+}
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.metaRow > span:first-child {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.back {
+  color: var(--ink-2);
+}
+.back:hover {
+  color: var(--cobalt);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes ping {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Stacked: the stage becomes a short header, and the form follows straight after. */
+@media (max-width: 1023px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stage {
+    gap: var(--sp-6);
+    padding: var(--sp-8) var(--gutter-md);
+  }
+  .float,
+  .ticker,
+  .stageFoot {
+    display: none;
+  }
+  .stageBody {
+    margin: 0;
+  }
+  .paper {
+    padding: var(--sp-8) var(--gutter-md);
+  }
+}
+@media (max-width: 639px) {
+  .stage,
+  .paper {
+    padding-left: var(--gutter-sm);
+    padding-right: var(--gutter-sm);
+  }
+  .stageTitle {
+    font-size: 32px;
+  }
+  .title {
+    font-size: 40px;
+  }
+  .orbitA {
+    width: 380px;
+    height: 380px;
+  }
+}
