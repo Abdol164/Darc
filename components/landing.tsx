@@ -232,7 +232,7 @@ export function Landing() {
       </section>
 
       {/* ---- how it works: a real sequence, so it is numbered ---------------------------- */}
-      <section className={l.section}>
+      <section id="how-it-works" className={l.section}>
         <header className={`${l.sectionHead} ${l.reveal}`}>
           <div>
             <div className={l.kicker}>How it works</div>
@@ -259,7 +259,7 @@ export function Landing() {
       </section>
 
       {/* ---- the ten checks ---------------------------------------------------------------- */}
-      <section className={l.section}>
+      <section id="checks" className={l.section}>
         <header className={`${l.sectionHead} ${l.reveal}`}>
           <div>
             <div className={l.kicker}>What every payment passes</div>

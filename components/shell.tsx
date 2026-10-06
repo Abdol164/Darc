@@ -22,6 +22,13 @@ const NAV = [
   { href: "/verify", label: "Verify", icon: VerifyIcon },
 ] as const;
 
+/** A visitor's header: the page's own sections and the public verifier, not the app's tabs. */
+const LANDING_NAV = [
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#checks", label: "The ten checks" },
+  { href: "/verify", label: "Verify an agent" },
+] as const;
+
 const short = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 export function Shell({
@@ -29,6 +36,7 @@ export function Shell({
   subtitle,
   action,
   hero,
+  landing,
   children,
 }: {
   /**
@@ -40,6 +48,8 @@ export function Shell({
   action?: ReactNode;
   /** Display-size heading on ruled ledger lines, for the signed-out front door. */
   hero?: boolean;
+  /** The marketing page: a visitor's header and no app tab bar, because it is not the dashboard. */
+  landing?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -55,11 +65,23 @@ export function Shell({
           </Link>
 
           <nav className={s.nav}>
-            {NAV.map(({ href, label }) => (
-              <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
-                {label}
-              </Link>
-            ))}
+            {landing
+              ? LANDING_NAV.map(({ href, label }) =>
+                  href.startsWith("#") ? (
+                    <a key={href} href={href} className={s.navItem}>
+                      {label}
+                    </a>
+                  ) : (
+                    <Link key={href} href={href} className={s.navItem}>
+                      {label}
+                    </Link>
+                  ),
+                )
+              : NAV.map(({ href, label }) => (
+                  <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
+                    {label}
+                  </Link>
+                ))}
           </nav>
 
           <div className={s.account}>
@@ -86,7 +108,7 @@ export function Shell({
         </div>
       </header>
 
-      <main className={s.main}>
+      <main className={`${s.main} ${landing ? s.mainLanding : ""}`}>
         {title && (
           <header className={`${s.header} ${hero ? s.hero : ""}`}>
             {hero && <div className={s.ruled} aria-hidden />}
@@ -102,14 +124,16 @@ export function Shell({
         {children}
       </main>
 
-      <nav className={s.mobileBar}>
-        {NAV.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} className={`${s.mobileItem} ${isActive(href) ? s.mobileActive : ""}`}>
-            <Icon size={19} />
-            {label}
-          </Link>
-        ))}
-      </nav>
+      {!landing && (
+        <nav className={s.mobileBar}>
+          {NAV.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={`${s.mobileItem} ${isActive(href) ? s.mobileActive : ""}`}>
+              <Icon size={19} />
+              {label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }

@@ -190,6 +190,8 @@
 /* ---- sections ----------------------------------------------------------------------- */
 .section {
   padding-top: var(--sp-16);
+  /* In-page links land below the sticky header, not under it. */
+  scroll-margin-top: var(--bar-h);
 }
 .sectionHead {
   display: flex;

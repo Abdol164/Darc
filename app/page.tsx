@@ -42,7 +42,7 @@ export default function HomePage() {
 
   if (!owner) {
     return (
-      <Shell>
+      <Shell landing>
         <Landing />
       </Shell>
     );

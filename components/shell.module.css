@@ -234,6 +234,10 @@
   .main {
     padding: var(--sp-8) var(--gutter-sm) 104px;
   }
+  /* No tab bar on the landing page, so no room is kept for one. */
+  .mainLanding {
+    padding-bottom: var(--sp-12);
+  }
   .header {
     margin-bottom: var(--sp-6);
   }

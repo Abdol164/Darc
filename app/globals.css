@@ -209,6 +209,12 @@ input[type="checkbox"] {
  * keyframe declared here would never be found by a component.
  */
 
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
