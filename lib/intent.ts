@@ -66,7 +66,9 @@ export async function checkIntent(request: {
       },
       { timeout: 10_000 },
     );
-    return response.parsed_output ?? null;
+    const verdict = response.parsed_output;
+    // The callers end the sentence themselves.
+    return verdict ? { ...verdict, reason: verdict.reason.trim().replace(/\.+$/, "") } : null;
   } catch (err) {
     if (err instanceof Anthropic.APIError) console.error(`[intent] API error ${err.status}:`, err.message);
     else console.error("[intent]", err);
