@@ -60,15 +60,18 @@ export type Line = {
   who: "agent" | "chain";
   text: string;
   tone?: "ok" | "declined" | "note";
+  /** A link shown after the text, e.g. the transaction on the explorer. */
+  href?: string;
 };
 
 export type TaskOutcome = "done" | "deferred" | "blocked" | "halted" | "skipped";
 
-export const line = (who: Line["who"], text: string, tone?: Line["tone"]): Line => ({
+export const line = (who: Line["who"], text: string, tone?: Line["tone"], href?: string): Line => ({
   at: Date.now(),
   who,
   text,
   tone,
+  href,
 });
 
 /** What the agent says before it tries — stating intent, not narrating a click. */

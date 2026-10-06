@@ -54,13 +54,17 @@ export async function POST(request: Request) {
     };
 
     const relayer = relayerWallet();
+    // Settle time is measured here, submit to receipt, so it shows Monad rather than the
+    // browser's network.
+    const submitted = Date.now();
     const hash = await relayer.writeContract({
       address: auth.merchant,
       abi: merchantAbi,
       functionName: "charge",
       args: [typed, signature, proof ?? []],
     });
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash, pollingInterval: 100 });
+    const settleMs = Date.now() - submitted;
 
     // charge() never reverts on a policy decline, so re-simulate at the mined block to learn
     // the outcome the transaction actually produced.
@@ -79,6 +83,7 @@ export async function POST(request: Request) {
       reason: ok ? null : describeReason(selector),
       hash,
       blockNumber: receipt.blockNumber.toString(),
+      settleMs,
     });
   } catch (err) {
     return Response.json({ error: errorMessage(err) }, { status: 500 });

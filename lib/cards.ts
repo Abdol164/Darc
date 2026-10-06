@@ -87,6 +87,8 @@ export type Attempt = {
   hash?: Hex;
   at: number;
   task?: string;
+  /** Submit to receipt on Monad, as measured by the relayer. */
+  settleMs?: number;
 };
 
 export function listAttempts(cardId?: string): Attempt[] {

@@ -19,6 +19,7 @@ export const cardManagerAbi = parseAbi([
   "function cardIdFor(address owner, address agentKey) pure returns (bytes32)",
   "function issueCard(address agentKey, uint256 dailyCap, bytes32 merchantRoot, uint64 validUntil, string agentURI) returns (bytes32, uint256)",
   "function revoke(bytes32 cardId)",
+  "function updatePolicy(bytes32 cardId, uint256 dailyCap, bytes32 merchantRoot, uint64 validUntil)",
 ]);
 
 /** The only thing an agent ever signs. Must match SPEND_AUTH_TYPEHASH in Solidity. */

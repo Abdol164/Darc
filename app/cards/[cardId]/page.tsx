@@ -11,17 +11,17 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { privateKeyToAccount } from "viem/accounts";
-import type { Hex } from "viem";
+import type { Address, Hex } from "viem";
 import { Shell } from "@/components/shell";
 import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
 import { AgentCardFace } from "@/components/agent-card";
-import { AddressLink, MerchantCell, pieces as p } from "@/components/pieces";
-import { merchantName } from "@/config/merchants";
-import { ADDRESSES, cardManagerAbi, SPEND_AUTH_TYPES } from "@/lib/contracts";
-import { merchantProof } from "@/lib/merkle";
+import { AddressLink, MerchantCell, pieces as p, tintClass } from "@/components/pieces";
+import { MERCHANTS, merchantName } from "@/config/merchants";
+import { ADDRESSES, cardManagerAbi } from "@/lib/contracts";
+import { merchantRoot } from "@/lib/merkle";
 import { AGENT, TASKS, decide, intendLine, line, summarise, type Line, type TaskOutcome } from "@/lib/agent";
-import { getCard, last4, listAttempts, saveAttempt, type StoredCard } from "@/lib/cards";
+import { getCard, last4, listAttempts, saveAttempt, saveCard, type StoredCard } from "@/lib/cards";
+import { fmtSettle, relay, signSpend, type RelayResult } from "@/lib/spend";
 import { chain, fmtUsd, loadAttestations, loadCardState, publicClient, txUrl, type Attestation, type CardState } from "@/lib/chain";
 import { useOwner } from "@/lib/owner-context";
 
@@ -37,6 +37,11 @@ export default function CardDetailPage() {
   const [outcomes, setOutcomes] = useState<Record<string, TaskOutcome>>({});
   const [running, setRunning] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [cap, setCap] = useState(50);
+  const [picked, setPicked] = useState<Address[]>([]);
+  /** The policy version in force before the last edit, so a stale authorisation can be shown failing. */
+  const [staleVersion, setStaleVersion] = useState<number>();
   const logRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -55,6 +60,10 @@ export default function CardDetailPage() {
   }, [lines]);
 
   const say = (...next: Line[]) => setLines((prev) => [...prev, ...next]);
+
+  /** Where and how fast the chain recorded an attempt, linked to the explorer. */
+  const settled = (r: RelayResult) =>
+    line("chain", `Recorded on Monad in ${fmtSettle(r.settleMs)} · block #${r.blockNumber}`, "note", txUrl(r.hash));
 
   /** One pass over the agent's goal list, reacting to whatever the chain says. */
   async function run() {
@@ -75,67 +84,42 @@ export default function CardDetailPage() {
         ),
       );
 
-      const account = privateKeyToAccount(stored.agentPrivateKey);
       let remainingUsd = Number(fresh.remaining) / 1e6;
       let policyVersion = fresh.policyVersion;
 
       for (const task of TASKS) {
         say(intendLine(task));
 
-        const auth = {
-          cardId,
-          merchant: task.merchant,
-          token: ADDRESSES.paymentToken,
-          amount: BigInt(Math.round(task.amountUsd * 1e6)),
-          nonce: BigInt(Date.now()),
-          deadline: BigInt(Math.floor(Date.now() / 1000) + 300),
-          policyVersion: BigInt(policyVersion),
-        };
-
         // The agent only ever signs. A relayer submits and pays the gas, including on refusal.
-        const signature = await account.signTypedData({
-          domain: { name: "AgentCard", version: "1", chainId: chain.id, verifyingContract: ADDRESSES.spendGate },
-          types: SPEND_AUTH_TYPES,
-          primaryType: "SpendAuth",
-          message: auth,
+        const signed = await signSpend({
+          cardId,
+          agentPrivateKey: stored.agentPrivateKey,
+          merchants: stored.merchants,
+          merchant: task.merchant,
+          amountUsd: task.amountUsd,
+          policyVersion,
         });
+        const result = await relay(signed);
+        const ok = result.ok;
 
-        const res = await fetch("/api/relay", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            auth: {
-              ...auth,
-              amount: auth.amount.toString(),
-              nonce: auth.nonce.toString(),
-              deadline: auth.deadline.toString(),
-              policyVersion: auth.policyVersion.toString(),
-            },
-            signature,
-            proof: merchantProof(stored.merchants, task.merchant),
-          }),
-        });
-        const data = (await res.json()) as { ok?: boolean; reason?: string | null; hash?: Hex; error?: string };
-        if (!res.ok || data.error) throw new Error(data.error ?? "the relayer could not submit that");
-
-        const ok = Boolean(data.ok);
-        const verdict = decide(task, ok, data.reason ?? null, remainingUsd);
-        say(...verdict.lines);
+        const verdict = decide(task, ok, result.reason, remainingUsd);
+        say(settled(result), ...verdict.lines);
         results[task.id] = verdict.outcome;
         setOutcomes({ ...results });
 
         saveAttempt({
-          id: `${cardId}-${auth.nonce}`,
+          id: `${cardId}-${signed.auth.nonce}`,
           cardId,
           agentAddress: stored.agentAddress,
           agentName: stored.agentName,
           merchant: task.merchant,
           amountUsd: task.amountUsd,
           ok,
-          reason: data.reason ?? null,
-          hash: data.hash,
+          reason: result.reason,
+          hash: result.hash,
           at: Date.now(),
           task: task.goal,
+          settleMs: result.settleMs,
         });
 
         if (ok) remainingUsd = Math.max(remainingUsd - task.amountUsd, 0);
@@ -149,6 +133,100 @@ export default function CardDetailPage() {
       }
 
       say(summarise(results));
+      await refresh();
+    } catch (err) {
+      say(line("chain", err instanceof Error ? err.message : String(err), "declined"));
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const openEdit = () => {
+    if (!state || !stored) return;
+    setCap(Number(state.dailyCap) / 1e6);
+    setPicked([...stored.merchants]);
+    setEditing(true);
+  };
+
+  /** Owner-signed policy change. Bumping policyVersion voids everything signed under the old one. */
+  const saveLimits = () =>
+    runOwnerAction("Updating the limits", async (wallet) => {
+      if (!state || !stored) return;
+      const before = state.policyVersion;
+      const hash = await wallet.writeContract({
+        address: ADDRESSES.cardManager,
+        abi: cardManagerAbi,
+        functionName: "updatePolicy",
+        args: [cardId, BigInt(cap) * 1_000_000n, merchantRoot(picked), BigInt(state.validUntil)],
+        account: wallet.account!,
+        chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      const next = { ...stored, merchants: picked, dailyCapUsd: cap };
+      saveCard(next);
+      setStored(next);
+      setStaleVersion(before);
+      setEditing(false);
+      say(
+        line(
+          "chain",
+          `Policy updated to version ${before + 1}: $${cap} a day, ${picked.length === 0 ? "any merchant" : `${picked.length} merchant(s)`}. Anything signed under version ${before} is now void.`,
+          "note",
+          txUrl(hash),
+        ),
+      );
+      await refresh();
+    });
+
+  /** The agent signs under the superseded policy version, and the chain refuses it. */
+  async function tryStale() {
+    if (!stored || !state || staleVersion === undefined) return;
+    setRunning(true);
+    try {
+      const merchant = stored.merchants[0] ?? MERCHANTS[0].address;
+      say(
+        line(
+          "agent",
+          `Authorising $5 to ${merchantName(merchant)} with an authorisation signed under the old policy, version ${staleVersion}.`,
+        ),
+      );
+      const signed = await signSpend({
+        cardId,
+        agentPrivateKey: stored.agentPrivateKey,
+        merchants: stored.merchants,
+        merchant,
+        amountUsd: 5,
+        policyVersion: staleVersion,
+      });
+      const result = await relay(signed);
+      say(
+        settled(result),
+        result.ok
+          ? line("chain", "Approved.", "ok")
+          : line("chain", `Refused: ${result.reason}.`, "declined"),
+        line(
+          "agent",
+          result.reason === "PolicyVersionStale"
+            ? "Understood: the owner changed the rules, so anything I signed under the old ones no longer counts. I will re-sign under the current policy."
+            : "That was not the refusal I expected; leaving it for the owner.",
+          "note",
+        ),
+      );
+      saveAttempt({
+        id: `${cardId}-${signed.auth.nonce}`,
+        cardId,
+        agentAddress: stored.agentAddress,
+        agentName: stored.agentName,
+        merchant,
+        amountUsd: 5,
+        ok: result.ok,
+        reason: result.reason,
+        hash: result.hash,
+        at: Date.now(),
+        task: "Stale authorisation",
+        settleMs: result.settleMs,
+      });
+      setStaleVersion(undefined);
       await refresh();
     } catch (err) {
       say(line("chain", err instanceof Error ? err.message : String(err), "declined"));
@@ -228,8 +306,77 @@ export default function CardDetailPage() {
               />
             )}
 
-            <Panel title="Policy">
-              {state && (
+            <Panel
+              title="Policy"
+              action={
+                state && !state.revoked && !state.expired && !editing ? (
+                  <Button variant="ghost" onClick={openEdit} disabled={!!busy || running}>
+                    Edit limits
+                  </Button>
+                ) : undefined
+              }
+            >
+              {state && editing && (
+                <>
+                  <label className={p.field}>
+                    <span className={p.fieldLabel}>
+                      <span>Daily limit</span>
+                      <strong>${cap}</strong>
+                    </span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={200}
+                      step={10}
+                      value={cap}
+                      onChange={(e) => setCap(Number(e.target.value))}
+                      className={u.fullRange}
+                    />
+                  </label>
+                  <div className={p.field}>
+                    <span className={p.fieldLabel}>
+                      <span>Allowed merchants</span>
+                      <span>{picked.length === 0 ? "any merchant" : `${picked.length} selected`}</span>
+                    </span>
+                    {MERCHANTS.map((m) => {
+                      const on = picked.some((x) => x.toLowerCase() === m.address.toLowerCase());
+                      return (
+                        <label key={m.address} className={`${p.check} ${on ? p.checkOn : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={on}
+                            onChange={(e) =>
+                              setPicked((prev) =>
+                                e.target.checked
+                                  ? [...prev, m.address]
+                                  : prev.filter((x) => x.toLowerCase() !== m.address.toLowerCase()),
+                              )
+                            }
+                          />
+                          <span className={`${p.avatarSm} ${tintClass(m.tintIndex)}`}>{m.initials}</span>
+                          <span>
+                            <span className={u.strong}>{m.name}</span>
+                            <span className={p.merchantSellsBlock}>{m.sells}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className={u.lead}>
+                    Saving bumps the policy version. Every authorisation the agent signed under the
+                    current version stops working at once.
+                  </p>
+                  <div className={p.btnRow}>
+                    <Button variant="primary" onClick={saveLimits} disabled={!!busy}>
+                      {busy ?? "Save new limits"}
+                    </Button>
+                    <Button variant="ghost" onClick={() => setEditing(false)} disabled={!!busy}>
+                      Cancel
+                    </Button>
+                  </div>
+                </>
+              )}
+              {state && !editing && (
                 <>
                   <DataRow label="Status" value={<StatusBadge kind={status as "active"} />} />
                   <DataRow label="Daily limit" value={fmtUsd(state.dailyCap)} />
@@ -245,6 +392,14 @@ export default function CardDetailPage() {
                   <DataRow label="Expires" value={new Date(state.validUntil * 1000).toLocaleDateString()} />
                   <DataRow label="Agent key" value={<AddressLink address={state.agentKey} />} />
                   <DataRow label="ERC-8004 identity" value={`#${state.agentId}`} />
+                  <DataRow label="Policy version" value={`v${state.policyVersion}`} />
+                  {staleVersion !== undefined && !state.revoked && (
+                    <div className={u.mt4}>
+                      <Button variant="secondary" onClick={tryStale} disabled={running || !!busy}>
+                        Try an authorisation signed under v{staleVersion}
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
             </Panel>
@@ -293,6 +448,14 @@ export default function CardDetailPage() {
                     <span className={p.who}>{l.who === "agent" ? AGENT.name : "chain"}</span>
                     <span className={l.tone === "ok" ? p.lineOk : l.tone === "declined" ? p.lineDeclined : l.tone === "note" ? p.lineNote : undefined}>
                       {l.text}
+                      {l.href && (
+                        <>
+                          {" "}
+                          <a href={l.href} target="_blank" rel="noreferrer">
+                            view
+                          </a>
+                        </>
+                      )}
                     </span>
                   </div>
                 ))}

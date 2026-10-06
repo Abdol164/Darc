@@ -16,6 +16,7 @@ import { AddressLink, MerchantCell, pieces as p } from "@/components/pieces";
 import { MERCHANTS } from "@/config/merchants";
 import { listAttempts, listCards, type Attempt, type StoredCard } from "@/lib/cards";
 import { loadAttestations, loadCardState, txUrl, type Attestation } from "@/lib/chain";
+import { fmtSettle } from "@/lib/spend";
 import { useOwner } from "@/lib/owner-context";
 
 type Row = {
@@ -28,6 +29,7 @@ type Row = {
   amountUsd?: number;
   at?: number;
   hash?: string;
+  settleMs?: number;
 };
 
 type Filter = "all" | "approved" | "declined";
@@ -71,6 +73,7 @@ export default function ActivityPage() {
           amountUsd: match?.amountUsd,
           at: match?.at,
           hash: match?.hash,
+          settleMs: match?.settleMs,
         });
       }
     }
@@ -139,7 +142,7 @@ export default function ActivityPage() {
               )}
             </Empty>
           ) : (
-            <Table head={["Agent", "Merchant", "Result", "Reason", "Amount", "When", "Tx"]}>
+            <Table head={["Agent", "Merchant", "Result", "Reason", "Amount", "When", "Settled", "Tx"]}>
               {filtered.map((r) => (
                 <tr key={r.key} className={r.verdict === "approved" ? u.railOk : u.railNo}>
                   <td>
@@ -162,6 +165,7 @@ export default function ActivityPage() {
                   </td>
                   <td className={u.cellMono}>{r.amountUsd !== undefined ? `$${r.amountUsd}` : "—"}</td>
                   <td className={u.dim}>{r.at ? new Date(r.at).toLocaleTimeString() : "—"}</td>
+                  <td className={u.cellMonoMuted}>{r.settleMs ? fmtSettle(r.settleMs) : "—"}</td>
                   <td>{r.hash ? <a href={txUrl(r.hash)} target="_blank" rel="noreferrer">view</a> : <span className={u.dim}>—</span>}</td>
                 </tr>
               ))}
@@ -169,7 +173,7 @@ export default function ActivityPage() {
           )}
         </Panel>
 
-        <Panel note="Verdicts and reasons come from the ERC-8004 reputation registry and were written by the merchants, not by us. Amounts and times come from this browser's record of each attempt, because the registry stores only the verdict and the reason.">
+        <Panel note="Verdicts and reasons come from the ERC-8004 reputation registry and were written by the merchants, not by us. Amounts, times and settle times come from this browser's record of each attempt, because the registry stores only the verdict and the reason.">
           <AddressLink address="0x8004B663056A597Dffe9eCcC1965A193B7388713" label="Reputation registry on Monad Testnet" />
         </Panel>
       </div>
