@@ -52,6 +52,7 @@ export async function POST(request: Request) {
     const after = await publicClient.getBalance({ address: address as Address });
     return Response.json({ funded: true, balance: formatEther(after), hash });
   } catch (err) {
+    console.error("[api/fund]", err);
     return Response.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

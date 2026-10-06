@@ -127,12 +127,17 @@ export function OwnerProvider({ children }: { children: ReactNode }) {
         remember(address);
         // Recover the card list before the session ends — deriveAgentKey dies with it.
         await recover(address, session.deriveAgentKey);
-        // A fresh passkey account holds nothing, so onboarding pre-funds its gas.
-        await fetch("/api/fund", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ address }),
-        }).catch(() => undefined);
+        // A fresh passkey account holds nothing, so onboarding pre-funds its gas. One retry:
+        // without it a single flaky RPC call leaves the account unable to claim AUSD.
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const res = await fetch("/api/fund", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ address }),
+          }).catch(() => undefined);
+          if (res?.ok) break;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
         return address;
       } catch (err) {
         setError(explainError(err));

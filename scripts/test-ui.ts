@@ -32,8 +32,10 @@ async function main() {
   }
 
   const app = spawn("npx", ["next", "start", "-p", String(APP_PORT)], { stdio: "ignore" });
+  // CHROME_PATH lets this run off Linux, e.g. on macOS:
+  //   CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
   const chrome = spawn(
-    "google-chrome",
+    process.env.CHROME_PATH ?? "google-chrome",
     [
       "--headless=new",
       "--no-sandbox",

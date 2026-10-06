@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       settleMs,
     });
   } catch (err) {
+    console.error("[api/relay]", err);
     return Response.json({ error: errorMessage(err) }, { status: 500 });
   }
 }

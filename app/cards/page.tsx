@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { privateKeyToAccount } from "viem/accounts";
-import type { Address } from "viem";
+import { parseEther, type Address } from "viem";
 import { Shell } from "@/components/shell";
 import { Button, Empty, Notice, Panel, ui as u } from "@/components/ui";
 import { AgentCardFace } from "@/components/agent-card";
@@ -44,6 +44,17 @@ export default function CardsPage() {
   const prepare = () =>
     runOwnerAction("Preparing your account", async (wallet, address) => {
       const account = wallet.account!;
+      // Sign-in pre-funds gas, but leaving the page early can cut that short. Make sure the
+      // account can pay for the two transactions below before sending them.
+      const gas = await publicClient.getBalance({ address });
+      if (gas < parseEther("0.05")) {
+        const res = await fetch("/api/fund", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address }),
+        });
+        if (!res.ok) throw new Error("Could not top up this account's gas. Try again in a moment.");
+      }
       // AUSD is a real token, so there is no mint: claim from Agora's public testnet faucet.
       if ((funds?.usd ?? 0n) < 100_000_000n) {
         const hash = await wallet.writeContract({
