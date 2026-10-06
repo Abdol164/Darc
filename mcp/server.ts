@@ -180,7 +180,7 @@ server.registerTool(
   {
     title: "Pay with the Darc card",
     description:
-      "Pay a merchant with this agent's Darc card. You sign a payment authorisation; the chain checks it against the card's rules and either settles it in AUSD, holds it for the owner's approval, or refuses it with a named reason. A payment over the limit, at a merchant off the card's list, or that does not fit the card's purpose is held rather than refused: the owner is asked on their devices, and you can check it with approval_status. Refusals are final for that attempt and are recorded publicly, so read the reason before trying anything else.",
+      "Pay a merchant with this agent's Darc card. You sign a payment authorisation; the chain checks it against the card's rules and either settles it in AUSD, holds it for the owner's approval, or refuses it with a named reason. A payment over the limit, at a merchant off the card's list, or that does not fit the card's purpose is held rather than refused: it waits in the owner's approvals inbox, and you can check it with approval_status. Refusals are final for that attempt and are recorded publicly, so read the reason before trying anything else.",
     inputSchema: {
       merchant: z.string().describe("The merchant's name (or part of it) or its 0x address, from list_merchants."),
       amountUsd: z.number().positive().max(100000).describe("Amount in US dollars (settled in AUSD)."),
@@ -256,7 +256,7 @@ server.registerTool(
     const tx = data.hash ? `${explorer}/tx/${data.hash}` : "";
     const timing = `Recorded on Monad in ${((data.settleMs ?? 0) / 1000).toFixed(2)} s at block #${data.blockNumber}.`;
     const text = data.pending
-      ? `Held for the owner's approval: ${data.reason}. Nothing has moved yet; the owner has been asked on their devices and can approve it with their passkey before the authorisation lapses in about ten minutes. Request id: ${data.requestId}. Check it later with approval_status; do not retry the same payment. ${timing}\n${tx}`
+      ? `Held for the owner's approval: ${data.reason}. Nothing has moved yet; it is waiting in the owner's approvals inbox, and they can approve it with their passkey before the authorisation lapses in about ten minutes. Request id: ${data.requestId}. Check it later with approval_status; do not retry the same payment. ${timing}\n${tx}`
       : data.ok
         ? `Approved: paid $${amountUsd} to ${merchantName} for "${purpose}". ${timing}\n${tx}`
         : `Refused: ${data.reason}. ${MEANING[data.reason ?? ""] ?? "Leave this for the owner."} No money moved. ${timing}\n${tx}`;
