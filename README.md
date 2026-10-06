@@ -375,17 +375,17 @@ again.
 ## Deployed addresses
 
 <!-- DEPLOYED:START -->
-Monad Testnet (chain `10143`), deployed +058721-01-09T01:10:33.000Z from commit `bca377af1776c9543b97fc3010c06e77cf6df239`.
+Monad Testnet (chain `10143`), deployed 2026-10-06T14:43:14.817Z from commit `ba9f84e325cedeb6e04fd29fc8f5dfa6a0697bcc`.
 
 | Contract | Address | Deployer |
 |---|---|---|
-| `CardManager` | [`0xBE65B96d591840AaCBe591B327abe92Cddc64D24`](https://testnet.monadvision.com/address/0xBE65B96d591840AaCBe591B327abe92Cddc64D24) | this deployment |
-| `SpendGate` | [`0xE020378b873d10dB86f3a1FF5c781db58B034794`](https://testnet.monadvision.com/address/0xE020378b873d10dB86f3a1FF5c781db58B034794) | this deployment |
-| `SpendRouter` | [`0xFc5Eb559b062F48D8f5C7d04F01C07568eB43124`](https://testnet.monadvision.com/address/0xFc5Eb559b062F48D8f5C7d04F01C07568eB43124) | this deployment |
-| `MockMerchantA` | [`0xdaf1f3fdc83e49BD4D50fDA1613c15D1C7552244`](https://testnet.monadvision.com/address/0xdaf1f3fdc83e49BD4D50fDA1613c15D1C7552244) | this deployment |
-| `MockMerchantB` | [`0x51fA5af542179cDe11e517b377f7fc2e443D86e8`](https://testnet.monadvision.com/address/0x51fA5af542179cDe11e517b377f7fc2e443D86e8) | this deployment |
-| `MockMerchantC` | [`0x0B0DFdc99265ACead416F9872B283EDD0D33b87A`](https://testnet.monadvision.com/address/0x0B0DFdc99265ACead416F9872B283EDD0D33b87A) | this deployment |
-| `ReputationReader` | [`0xc86630cB8901ff7038e2Fa3b48C3b2E4d28e159e`](https://testnet.monadvision.com/address/0xc86630cB8901ff7038e2Fa3b48C3b2E4d28e159e) | this deployment |
+| `CardManager` | [`0xb8e3963261d0A81E4009b6c71470294552093ffA`](https://testnet.monadvision.com/address/0xb8e3963261d0A81E4009b6c71470294552093ffA) | this deployment |
+| `SpendGate` | [`0x11d4f6fe7ea9320106145d4f50e6b0122A42d20F`](https://testnet.monadvision.com/address/0x11d4f6fe7ea9320106145d4f50e6b0122A42d20F) | this deployment |
+| `SpendRouter` | [`0xe7126777E8aAFE384F32854b3AB7A518561625D2`](https://testnet.monadvision.com/address/0xe7126777E8aAFE384F32854b3AB7A518561625D2) | this deployment |
+| `MockMerchantA` | [`0x7169dE5dd003bD2E6906e1D36672eE260F96Df8A`](https://testnet.monadvision.com/address/0x7169dE5dd003bD2E6906e1D36672eE260F96Df8A) | this deployment |
+| `MockMerchantB` | [`0xf0F4219338Ca10615973b2522ad07FBA0cdD7E83`](https://testnet.monadvision.com/address/0xf0F4219338Ca10615973b2522ad07FBA0cdD7E83) | this deployment |
+| `MockMerchantC` | [`0x9E4D51a114Ae490A86BddB1c421BAEd56Bf867BE`](https://testnet.monadvision.com/address/0x9E4D51a114Ae490A86BddB1c421BAEd56Bf867BE) | this deployment |
+| `ReputationReader` | [`0x20B66005E757684cfF642D7c5722610aB1E469C1`](https://testnet.monadvision.com/address/0x20B66005E757684cfF642D7c5722610aB1E469C1) | this deployment |
 | `AUSD` (settlement token) | [`0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC`](https://testnet.monadvision.com/address/0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC) | Agora |
 | `IdentityRegistry` | [`0x8004A818BFB912233c491871b3d84c89A494BD9e`](https://testnet.monadvision.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) | ERC-8004 project |
 | `ReputationRegistry` | [`0x8004B663056A597Dffe9eCcC1965A193B7388713`](https://testnet.monadvision.com/address/0x8004B663056A597Dffe9eCcC1965A193B7388713) | ERC-8004 project |

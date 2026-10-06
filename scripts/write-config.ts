@@ -62,7 +62,8 @@ const commit = (() => {
   }
 })();
 
-const deployedAt = new Date(broadcast.timestamp * 1000).toISOString();
+// Foundry writes the broadcast timestamp in milliseconds; older releases used seconds.
+const deployedAt = new Date(broadcast.timestamp > 1e12 ? broadcast.timestamp : broadcast.timestamp * 1000).toISOString();
 
 // --- config/addresses.ts -----------------------------------------------------
 const entries = [...deployed.entries()]
