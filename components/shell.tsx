@@ -9,7 +9,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Wordmark, Mark } from "./brand";
-import { ActivityIcon, AgentsIcon, CardsIcon, HomeIcon, VerifyIcon } from "./icons";
+import { ActivityIcon, AgentsIcon, ApprovalsIcon, CardsIcon, HomeIcon, VerifyIcon } from "./icons";
+import { useHeldPayments } from "./approvals";
+import { listCards } from "@/lib/cards";
 import { useOwner } from "@/lib/owner-context";
 import s from "./shell.module.css";
 
@@ -17,15 +19,19 @@ import s from "./shell.module.css";
 const NAV = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/cards", label: "Cards", icon: CardsIcon },
+  { href: "/approvals", label: "Approvals", icon: ApprovalsIcon },
   { href: "/activity", label: "Activity", icon: ActivityIcon },
   { href: "/agents", label: "Agents", icon: AgentsIcon },
   { href: "/verify", label: "Verify", icon: VerifyIcon },
 ] as const;
 
+/** Phones get five: Agents is the one that can wait for a bigger screen. */
+const MOBILE_NAV = NAV.filter((n) => n.href !== "/agents");
+
 /** A visitor's header: the page's own sections and the public verifier, not the app's tabs. */
 const LANDING_NAV = [
   { href: "#how-it-works", label: "How it works" },
-  { href: "#checks", label: "The ten checks" },
+  { href: "#checks", label: "The checks" },
   { href: "/verify", label: "Verify an agent" },
 ] as const;
 
@@ -54,6 +60,9 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const { owner, signOut } = useOwner();
+  // Payments waiting on the owner, counted on every screen so a request is never missed.
+  const { held } = useHeldPayments(owner && !landing ? listCards(owner).map((c) => c.cardId) : []);
+  const waiting = held.length;
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -80,6 +89,7 @@ export function Shell({
               : NAV.map(({ href, label }) => (
                   <Link key={href} href={href} className={`${s.navItem} ${isActive(href) ? s.navActive : ""}`}>
                     {label}
+                    {href === "/approvals" && waiting > 0 && <span className={s.count}>{waiting}</span>}
                   </Link>
                 ))}
           </nav>
@@ -126,9 +136,12 @@ export function Shell({
 
       {!landing && (
         <nav className={s.mobileBar}>
-          {NAV.map(({ href, label, icon: Icon }) => (
+          {MOBILE_NAV.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className={`${s.mobileItem} ${isActive(href) ? s.mobileActive : ""}`}>
-              <Icon size={19} />
+              <span className={s.mobileIcon}>
+                <Icon size={19} />
+                {href === "/approvals" && waiting > 0 && <span className={s.countDot}>{waiting}</span>}
+              </span>
               {label}
             </Link>
           ))}

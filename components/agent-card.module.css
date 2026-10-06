@@ -200,3 +200,17 @@ a:hover > .wrap {
     transform: rotate(-12deg) scale(1);
   }
 }
+
+/* Frozen by the velocity rule: a rime of fine diagonal frost over the face, and a cold cast. */
+.frozen {
+  filter: saturate(0.55) brightness(1.04);
+}
+.frozen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(135deg, var(--card-frost) 0 1px, transparent 1px 7px),
+    linear-gradient(160deg, var(--card-frost), transparent 60%);
+}

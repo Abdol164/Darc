@@ -60,6 +60,7 @@
   --card-hi: #1c2a4d;
   --card-lo: #090e1c;
   --card-line: rgba(255, 255, 255, 0.04);
+  --card-frost: rgba(214, 228, 255, 0.14);  /* frozen card: rime over the face */
   --card-void-hi: #3a3f4a;  /* revoked stock: the same card, drained of colour */
   --card-void-lo: #161a22;
   --chip-light: #ecdcae;

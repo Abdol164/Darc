@@ -46,6 +46,12 @@ export const SettingsIcon = ({ size = 16 }: P) => (
     <path d="M8 1.6v1.7M8 12.7v1.7M3.5 3.5l1.2 1.2M11.3 11.3l1.2 1.2M1.6 8h1.7M12.7 8h1.7M3.5 12.5l1.2-1.2M11.3 4.7l1.2-1.2" />
   </svg>
 );
+export const ApprovalsIcon = ({ size = 16 }: P) => (
+  <svg {...base(size)}>
+    <path d="M3 3.5h10v6.2L10.7 12H3V3.5Z" />
+    <path d="M5.6 7.6 7.3 9.2l3.1-3.2" />
+  </svg>
+);
 export const PlusIcon = ({ size = 16 }: P) => (
   <svg {...base(size)}>
     <path d="M8 3.4v9.2M3.4 8h9.2" />

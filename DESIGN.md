@@ -23,7 +23,7 @@ These elements make the system recognisably Darc. Keep them.
 | Signature | What it is | Where |
 |---|---|---|
 | **The notch** | The clipped bottom-right corner from the Darc mark, cut at 45° | Card face (24px), panels (14px), stat tiles, primary button, Sign in (8px) |
-| **The verdict line** | A 3px green or red rule down the left edge of a record | Every table row of payment attempts; every line of the agent's run log (2px) |
+| **The verdict line** | A 3px green, red or amber rule down the left edge of a record (amber: held for the owner) | Every table row of payment attempts; every line of the agent's run log (2px); every held payment |
 | **Ledger paper** | Horizontal rules every 32px with a cobalt margin line | Behind the landing headline (copy written to the right of the margin line); the closing call panel |
 | **Receipt rows** | Label/value rows separated by dashed rules | Every `DataRow` list (policy, identity, account) |
 | **Security print** | Fine concentric linework on the card, like a cheque | The card face |
@@ -68,10 +68,10 @@ Each verdict has a **text** tone (at least 4.5:1 on its own wash at 12px), a bri
 |---|---|---|---|---|---|
 | Approve | `--approve` `#13795b` | `--approve-mark` `#1fa67a` | mark at 12% | mark at 40% | Approved, active, connected |
 | Refuse | `--refuse` `#b42d26` | `--refuse-mark` `#e0473d` | mark at 9% | mark at 38% | Refused, declined, blocked, errors |
-| Hold | `--hold` `#8f5d0f` | `--hold-mark` `#e2a93b` | mark at 14% | mark at 45% | Pending, queued, deferred |
+| Hold | `--hold` `#8f5d0f` | `--hold-mark` `#e2a93b` | mark at 14% | mark at 45% | Pending, and payments held for the owner's approval |
 | Void | `--void` = `--ink` | | | | Revoked: a solid ink badge, like a stamp |
 
-Expired and skipped states use `--ink-3` on `--paper-sunk`.
+Expired and skipped states use `--ink-3` on `--paper-sunk`. **Frozen** (stopped by the velocity rule, waiting for the owner to unfreeze) uses cobalt: text `--cobalt` on `--cobalt-wash` with a `--cobalt-edge` border, and the card face frosts over with `--card-frost`.
 
 ### Card stock
 
@@ -249,6 +249,12 @@ Every figure on it is a property of the system (10 checks, 1 revoke transaction,
   - One primary button, a link to the public verifier, the passkey-provider advisory, and network and contract details with a live UTC clock.
 - On narrow screens the stage shrinks to a header.
 - There is no password, wallet or SSO path, so none is shown.
+
+**ApprovalInbox** (`approvals.tsx`): payments held for the owner. Each is a notched slip with an amber verdict line, a mono "Needs your approval" kicker, the serif question ("Approve $200 to Horizon Data API?"), the reason in plain words, a live expiry countdown, and two answers: "Approve with passkey" (primary) and "Decline" (ghost). It polls the chain every 4 seconds; the app bar shows the waiting count as an amber chip on Approvals.
+
+**PushToggle** (`push-toggle.tsx`): signs a device up for approval alerts with the owner's passkey. Explains plainly when a browser cannot, when iOS needs Darc on the Home Screen first, and when the server has no push keys.
+
+**RuleFields** (`rule-fields.tsx`): "What the card is for" (a textarea) and "Freeze on a burst" (Off, 3, 5 or 10 attempts a minute), each with a one-line hint. Shared by the issue and edit forms.
 
 **Wordmark and Mark** (`brand.tsx`): the mark is a card with a chip and the clipped corner, in a cobalt gradient. Use `inverse` (white) on dark grounds such as the card. The wordmark is the mark plus "Darc" in the serif.
 

@@ -216,11 +216,12 @@ async function main() {
     t = await text();
     // Badge labels are uppercased by CSS, so innerText returns PAID/DEFERRED/BLOCKED.
     console.log(`  hosting renewal           ${/paid/i.test(t) ? "paid" : "?"}`);
-    console.log(`  api top-up                ${/deferred/i.test(t) ? "deferred (over limit)" : "?"}`);
-    console.log(`  data feed                 ${/blocked/i.test(t) ? "blocked (merchant not allowed)" : "?"}`);
+    // Since contracts v2 these are held for the owner rather than refused.
+    console.log(`  api top-up                ${/Held for the owner's approval: DailyCapExceeded/.test(t) ? "held for the owner (over limit)" : "?"}`);
+    console.log(`  data feed                 ${/Held for the owner's approval: MerchantNotAllowed/.test(t) ? "held for the owner (merchant not allowed)" : "?"}`);
     console.log(`  agent narrated            ${/Atlas here/.test(t) ? "yes" : "no"}`);
-    console.log(`  reasoned about refusals   ${/Deferring|not on this card/.test(t) ? "yes" : "no"}`);
-    console.log(`  on-chain rows             ${(t.match(/DailyCapExceeded|MerchantNotAllowed/g) ?? []).length}`);
+    console.log(`  reasoned about holds      ${/asked the owner to approve/.test(t) ? "yes" : "no"}`);
+    console.log(`  held for approval         ${(t.match(/Held for the owner's approval/g) ?? []).length}`);
 
     // Capture the agent address here; /verify has no address on screen to scrape.
     const agentAddress = await ev(

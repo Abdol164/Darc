@@ -26,8 +26,8 @@ const WORDS = ["budget", "daily limit", "merchant list", "spending"] as const;
 /** The demo agent's three goals on a $50 card, as the live run records them. */
 const RUN = [
   { ok: true, text: "Lagos Cloud Hosting · $20 · paid" },
-  { ok: false, text: "Horizon Data API · $200 · DailyCapExceeded" },
-  { ok: false, text: "Riverside Subscriptions · $15 · MerchantNotAllowed" },
+  { ok: false, text: "Horizon Data API · $200 · held for you: over the limit" },
+  { ok: false, text: "Riverside Subscriptions · $15 · held for you: not on the list" },
 ];
 
 const COPY: Record<Mode, { title: [string, string]; lede: string; device: string; action: string }> = {
@@ -190,7 +190,7 @@ export default function SignInPage() {
             <div className={s.tickerLines}>
               {RUN.map((r, i) => (
                 <div key={i} className={`${s.tickerLine} ${i < step ? s.shown : ""}`}>
-                  <span className={r.ok ? s.tick : s.cross}>{r.ok ? "✓" : "✕"}</span>
+                  <span className={r.ok ? s.tick : s.hold}>{r.ok ? "✓" : "◷"}</span>
                   <span>{r.text}</span>
                 </div>
               ))}

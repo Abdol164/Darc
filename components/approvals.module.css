@@ -1,0 +1,133 @@
+/* The approvals inbox. A held payment is the one thing on screen that waits on the owner, so it
+   reads like an unsigned slip: hold-amber edge, serif question, two plain answers. */
+.inbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.item {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4) var(--sp-6);
+  padding: var(--sp-5) var(--sp-6);
+  background: var(--paper-raised);
+  border: 1px solid var(--hold-edge);
+  border-radius: var(--rd-2);
+  box-shadow: inset 3px 0 0 var(--hold-mark);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch)), calc(100% - var(--notch)) 100%, 0 100%);
+  animation: arrive 420ms var(--ease) both;
+}
+.main {
+  flex: 1;
+  min-width: 0;
+}
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hold);
+}
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--hold-mark);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.title {
+  font-size: var(--fs-xl);
+  line-height: 1.15;
+}
+.reason {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+.meta {
+  margin-top: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.empty {
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+/* ---- phone alerts ---------------------------------------------------------------- */
+.push {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.pushRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.on {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--approve);
+}
+.onDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--approve-mark);
+}
+
+@media (max-width: 639px) {
+  .item {
+    padding: var(--sp-4) var(--sp-5);
+  }
+  .actions {
+    width: 100%;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

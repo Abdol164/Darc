@@ -7,7 +7,7 @@
  * no indexer, no archive node, no key.
  */
 import type { Address, Hex } from "viem";
-import { ADDRESSES, cardManagerAbi, spendGateAbi } from "./contracts";
+import { ADDRESSES, cardManagerAbi, spendGateAbi, spendRouterAbi } from "./contracts";
 import { loadAgentReport, loadAttestations, loadIdentity, publicClient, type Attestation } from "./chain";
 
 export type AgentRecord = {
@@ -19,6 +19,9 @@ export type AgentRecord = {
   declined: number;
   revoked: boolean;
   expired: boolean;
+  /** Frozen by the card's velocity rule until the owner unfreezes it. */
+  frozen: boolean;
+  purpose?: string;
   dailyCap?: bigint;
   remaining?: bigint;
   validUntil?: number;
@@ -28,18 +31,18 @@ export type AgentRecord = {
   attestations: Attestation[];
 };
 
-export type Standing = "active" | "revoked" | "expired" | "unknown";
+export type Standing = "active" | "frozen" | "revoked" | "expired" | "unknown";
 
 export const standingOf = (r: AgentRecord): Standing =>
-  !r.found ? "unknown" : r.revoked ? "revoked" : r.expired ? "expired" : "active";
+  !r.found ? "unknown" : r.revoked ? "revoked" : r.expired ? "expired" : r.frozen ? "frozen" : "active";
 
 export async function loadAgentRecord(agentKey: Address): Promise<AgentRecord> {
   const report = await loadAgentReport(agentKey);
   if (!report.found) {
-    return { agentKey, found: false, approved: 0, declined: 0, revoked: false, expired: false, attestations: [] };
+    return { agentKey, found: false, approved: 0, declined: 0, revoked: false, expired: false, frozen: false, attestations: [] };
   }
 
-  const [card, remaining, identity, attestations] = await Promise.all([
+  const [card, remaining, identity, attestations, frozen, purpose] = await Promise.all([
     publicClient.readContract({
       address: ADDRESSES.cardManager,
       abi: cardManagerAbi,
@@ -54,6 +57,18 @@ export async function loadAgentRecord(agentKey: Address): Promise<AgentRecord> {
     }),
     loadIdentity(report.agentId),
     loadAttestations(report.agentId),
+    publicClient.readContract({
+      address: ADDRESSES.spendRouter,
+      abi: spendRouterAbi,
+      functionName: "frozen",
+      args: [report.cardId as Hex],
+    }),
+    publicClient.readContract({
+      address: ADDRESSES.cardManager,
+      abi: cardManagerAbi,
+      functionName: "purposeOf",
+      args: [report.cardId as Hex],
+    }),
   ]);
 
   return {
@@ -65,6 +80,8 @@ export async function loadAgentRecord(agentKey: Address): Promise<AgentRecord> {
     declined: Number(report.declinedCount),
     revoked: report.revoked,
     expired: report.expired,
+    frozen,
+    purpose,
     dailyCap: card.dailyCap,
     remaining,
     validUntil: Number(card.validUntil),

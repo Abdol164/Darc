@@ -97,6 +97,7 @@ export default function HomePage() {
                     remaining={featured.state?.remaining}
                     revoked={featured.state?.revoked ?? false}
                     expired={featured.state?.expired}
+                  frozen={featured.state?.frozen}
                     merchantCount={featured.stored.merchants.length}
                   />
                 </Link>

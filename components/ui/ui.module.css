@@ -187,6 +187,12 @@
   background: var(--paper-sunk);
   border-color: var(--rule);
 }
+/* Frozen by the velocity rule: waiting on the owner to unfreeze, so it takes the action colour. */
+.sFrozen {
+  color: var(--cobalt);
+  background: var(--cobalt-wash);
+  border-color: var(--cobalt-edge);
+}
 
 /* ---- data row: a receipt line, dashed between entries --------------------------- */
 .row {
@@ -275,6 +281,10 @@
 }
 .railNo td:first-child {
   box-shadow: inset 3px 0 0 var(--refuse-mark);
+}
+/* Held for the owner: neither verdict yet. */
+.railHold td:first-child {
+  box-shadow: inset 3px 0 0 var(--hold-mark);
 }
 
 /* ---- empty, skeleton, notice ---------------------------------------------------- */

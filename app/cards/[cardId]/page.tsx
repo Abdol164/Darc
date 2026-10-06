@@ -17,9 +17,11 @@ import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } fr
 import { AgentCardFace } from "@/components/agent-card";
 import { AddressLink, MerchantCell, Snippet, pieces as p, tintClass } from "@/components/pieces";
 import { MERCHANTS, merchantName } from "@/config/merchants";
-import { ADDRESSES, cardManagerAbi } from "@/lib/contracts";
+import { ADDRESSES, cardManagerAbi, spendRouterAbi } from "@/lib/contracts";
+import { ApprovalInbox } from "@/components/approvals";
+import { BURST_WINDOW_S, RuleFields } from "@/components/rule-fields";
 import { merchantRoot } from "@/lib/merkle";
-import { AGENT, TASKS, decide, intendLine, line, summarise, type Line, type TaskOutcome } from "@/lib/agent";
+import { AGENT, TASKS, decide, held, intendLine, line, summarise, type Line, type TaskOutcome } from "@/lib/agent";
 import { getCard, last4, listAttempts, saveAttempt, saveCard, type StoredCard } from "@/lib/cards";
 import { fmtSettle, relay, signSpend, type RelayResult } from "@/lib/spend";
 import { chain, fmtUsd, loadAttestations, loadCardState, publicClient, txUrl, type Attestation, type CardState } from "@/lib/chain";
@@ -39,6 +41,9 @@ export default function CardDetailPage() {
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [cap, setCap] = useState(50);
+  const [purpose, setPurpose] = useState("");
+  /** Velocity rule while editing: attempts allowed per minute, 0 for none. */
+  const [burst, setBurst] = useState(0);
   const [picked, setPicked] = useState<Address[]>([]);
   /** The policy version in force before the last edit, so a stale authorisation can be shown failing. */
   const [staleVersion, setStaleVersion] = useState<number>();
@@ -103,8 +108,19 @@ export default function CardDetailPage() {
           amountUsd: task.amountUsd,
           policyVersion,
         });
-        const result = await relay(signed);
+        // The goal goes along as the memo, so the relayer can check it against the card's purpose.
+        const result = await relay(signed, "", { memo: task.goal });
         const ok = result.ok;
+
+        if (result.pending) {
+          const hold = held(task, result.reason ?? "");
+          say(settled(result), ...hold.lines);
+          results[task.id] = hold.outcome;
+          setOutcomes({ ...results });
+          const after = await loadCardState(cardId);
+          if (after) policyVersion = after.policyVersion;
+          continue;
+        }
 
         const verdict = decide(task, ok, result.reason, remainingUsd);
         say(settled(result), ...verdict.lines);
@@ -149,36 +165,153 @@ export default function CardDetailPage() {
     if (!state || !stored) return;
     setCap(Number(state.dailyCap) / 1e6);
     setPicked([...stored.merchants]);
+    setPurpose(state.purpose);
+    setBurst(state.maxBurst);
     setEditing(true);
   };
 
-  /** Owner-signed policy change. Bumping policyVersion voids everything signed under the old one. */
-  const saveLimits = () =>
-    runOwnerAction("Updating the limits", async (wallet) => {
-      if (!state || !stored) return;
-      const before = state.policyVersion;
+  /** Owner action: lift a velocity freeze. */
+  const unfreeze = () =>
+    runOwnerAction("Unfreezing the card", async (wallet) => {
       const hash = await wallet.writeContract({
-        address: ADDRESSES.cardManager,
-        abi: cardManagerAbi,
-        functionName: "updatePolicy",
-        args: [cardId, BigInt(cap) * 1_000_000n, merchantRoot(picked), BigInt(state.validUntil)],
+        address: ADDRESSES.spendRouter,
+        abi: spendRouterAbi,
+        functionName: "unfreeze",
+        args: [cardId],
         account: wallet.account!,
         chain,
       });
       await publicClient.waitForTransactionReceipt({ hash });
-      const next = { ...stored, merchants: picked, dailyCapUsd: cap };
-      saveCard(next);
-      setStored(next);
-      setStaleVersion(before);
-      setEditing(false);
+      say(line("chain", "Unfrozen by the owner. The burst count starts again.", "note", txUrl(hash)));
+      await refresh();
+    });
+
+  /**
+   * The runaway loop, on purpose: the agent repeats a $1 payment until the card's velocity
+   * rule trips and the chain freezes the card. Each attempt is submitted as-is (no escalation),
+   * so every one is recorded.
+   */
+  async function runaway() {
+    if (!stored || !state || state.maxBurst === 0) return;
+    setRunning(true);
+    try {
+      const merchant = stored.merchants[0] ?? MERCHANTS[0].address;
       say(
         line(
-          "chain",
-          `Policy updated to version ${before + 1}: $${cap} a day, ${picked.length === 0 ? "any merchant" : `${picked.length} merchant(s)`}. Anything signed under version ${before} is now void.`,
+          "agent",
+          `Something has gone wrong in my loop: I am paying ${merchantName(merchant)} $1, again and again.`,
           "note",
-          txUrl(hash),
         ),
       );
+      for (let i = 1; i <= state.maxBurst + 2; i++) {
+        const signed = await signSpend({
+          cardId,
+          agentPrivateKey: stored.agentPrivateKey,
+          merchants: stored.merchants,
+          merchant,
+          amountUsd: 1,
+          policyVersion: state.policyVersion,
+        });
+        const result = await relay(signed, "", { memo: "Retrying the same $1 charge", escalate: false });
+        say(
+          line(
+            "chain",
+            `Attempt ${i}: ${result.ok ? "paid $1" : `refused, ${result.reason}`} · ${fmtSettle(result.settleMs)}`,
+            result.ok ? "ok" : "declined",
+            txUrl(result.hash),
+          ),
+        );
+        saveAttempt({
+          id: `${cardId}-${signed.auth.nonce}`,
+          cardId,
+          agentAddress: stored.agentAddress,
+          agentName: stored.agentName,
+          merchant,
+          amountUsd: 1,
+          ok: result.ok,
+          reason: result.reason,
+          hash: result.hash,
+          at: Date.now(),
+          task: "Runaway loop",
+          settleMs: result.settleMs,
+        });
+        if (result.reason === "VelocityExceeded" || result.reason === "CardFrozen") {
+          say(
+            line(
+              "chain",
+              `The card froze itself: more than ${state.maxBurst} attempts inside ${state.burstWindow} seconds. Nothing more can be paid until the owner unfreezes it.`,
+              "declined",
+            ),
+          );
+          break;
+        }
+      }
+      await refresh();
+    } catch (err) {
+      say(line("chain", err instanceof Error ? err.message : String(err), "declined"));
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  /**
+   * Owner-signed policy change, in one passkey prompt. New limits bump policyVersion, which
+   * voids everything signed under the old one; the purpose and velocity rule are not part of
+   * what the agent signs, so changing only those does not.
+   */
+  const saveLimits = () =>
+    runOwnerAction("Updating the card", async (wallet) => {
+      if (!state || !stored) return;
+      const sameMerchants =
+        picked.length === stored.merchants.length &&
+        picked.every((m) => stored.merchants.some((x) => x.toLowerCase() === m.toLowerCase()));
+      const limitsChanged = cap !== Number(state.dailyCap) / 1e6 || !sameMerchants;
+      const rulesChanged = purpose.trim() !== state.purpose || burst !== state.maxBurst;
+
+      if (limitsChanged) {
+        const before = state.policyVersion;
+        const hash = await wallet.writeContract({
+          address: ADDRESSES.cardManager,
+          abi: cardManagerAbi,
+          functionName: "updatePolicy",
+          args: [cardId, BigInt(cap) * 1_000_000n, merchantRoot(picked), BigInt(state.validUntil)],
+          account: wallet.account!,
+          chain,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        const next = { ...stored, merchants: picked, dailyCapUsd: cap };
+        saveCard(next);
+        setStored(next);
+        setStaleVersion(before);
+        say(
+          line(
+            "chain",
+            `Policy updated to version ${before + 1}: $${cap} a day, ${picked.length === 0 ? "any merchant" : `${picked.length} merchant(s)`}. Anything signed under version ${before} is now void.`,
+            "note",
+            txUrl(hash),
+          ),
+        );
+      }
+      if (rulesChanged) {
+        const hash = await wallet.writeContract({
+          address: ADDRESSES.cardManager,
+          abi: cardManagerAbi,
+          functionName: "setRules",
+          args: [cardId, burst, burst ? BURST_WINDOW_S : 0, purpose.trim()],
+          account: wallet.account!,
+          chain,
+        });
+        await publicClient.waitForTransactionReceipt({ hash });
+        say(
+          line(
+            "chain",
+            `Rules updated: ${burst ? `freezes after ${burst} attempts a minute` : "no velocity rule"}; purpose "${purpose.trim() || "not stated"}".`,
+            "note",
+            txUrl(hash),
+          ),
+        );
+      }
+      setEditing(false);
       await refresh();
     });
 
@@ -268,7 +401,7 @@ export default function CardDetailPage() {
   }
 
   const attempts = listAttempts(cardId);
-  const status = state?.revoked ? "revoked" : state?.expired ? "expired" : "active";
+  const status = state?.revoked ? "revoked" : state?.expired ? "expired" : state?.frozen ? "frozen" : "active";
 
   return (
     <Shell
@@ -295,6 +428,16 @@ export default function CardDetailPage() {
           </Notice>
         )}
 
+        {state?.frozen && !state.revoked && (
+          <Notice tone="error" title="Frozen by the velocity rule">
+            The agent tried to pay more than {state.maxBurst} times inside {state.burstWindow} seconds, so the
+            chain froze this card. Nothing can be paid until you unfreeze it.{" "}
+            <button className={u.linkBtn} onClick={unfreeze} disabled={!!busy}>
+              {busy ?? "Unfreeze with passkey"}
+            </button>
+          </Notice>
+        )}
+
         <div className={p.grid2}>
           <div className={p.stack}>
             {stored && state && (
@@ -306,6 +449,7 @@ export default function CardDetailPage() {
                 remaining={state.remaining}
                 revoked={state.revoked}
                 expired={state.expired}
+                frozen={state.frozen}
                 merchantCount={stored.merchants.length}
               />
             )}
@@ -315,7 +459,7 @@ export default function CardDetailPage() {
               action={
                 state && !state.revoked && !state.expired && !editing ? (
                   <Button variant="ghost" onClick={openEdit} disabled={!!busy || running}>
-                    Edit limits
+                    Edit card
                   </Button>
                 ) : undefined
               }
@@ -366,13 +510,14 @@ export default function CardDetailPage() {
                       );
                     })}
                   </div>
+                  <RuleFields purpose={purpose} onPurpose={setPurpose} burst={burst} onBurst={setBurst} />
                   <p className={u.lead}>
-                    Saving bumps the policy version. Every authorisation the agent signed under the
+                    New limits bump the policy version: every authorisation the agent signed under the
                     current version stops working at once.
                   </p>
                   <div className={p.btnRow}>
                     <Button variant="primary" onClick={saveLimits} disabled={!!busy}>
-                      {busy ?? "Save new limits"}
+                      {busy ?? "Save changes"}
                     </Button>
                     <Button variant="ghost" onClick={() => setEditing(false)} disabled={!!busy}>
                       Cancel
@@ -391,6 +536,15 @@ export default function CardDetailPage() {
                       stored?.merchants.length
                         ? stored.merchants.map((m) => merchantName(m)).join(", ")
                         : "any merchant"
+                    }
+                  />
+                  <DataRow label="For" value={state.purpose || "Not stated"} />
+                  <DataRow
+                    label="Velocity rule"
+                    value={
+                      state.maxBurst
+                        ? `Freezes after ${state.maxBurst} attempts in ${state.burstWindow} seconds`
+                        : "None"
                     }
                   />
                   <DataRow label="Expires" value={new Date(state.validUntil * 1000).toLocaleDateString()} />
@@ -434,6 +588,7 @@ export default function CardDetailPage() {
                     {o === "blocked" && <StatusBadge kind="declined" label="Blocked" />}
                     {o === "halted" && <StatusBadge kind="revoked" label="Stopped" />}
                     {o === "skipped" && <StatusBadge kind="expired" label="Skipped" />}
+                    {o === "awaiting" && <StatusBadge kind="pending" label="Awaiting you" />}
                     {!o && running && <StatusBadge kind="pending" label="Queued" />}
                   </div>
                 );
@@ -465,8 +620,32 @@ export default function CardDetailPage() {
                 ))}
               </div>
             )}
+
+            {state && state.maxBurst > 0 && !state.frozen && !state.revoked && (
+              <div className={`${p.rowBetween} ${u.mt4}`}>
+                <span className={u.sub}>
+                  Watch the velocity rule work: the agent repeats a $1 payment until the card freezes.
+                </span>
+                <Button variant="ghost" onClick={runaway} disabled={running || !!busy}>
+                  Simulate a runaway loop
+                </Button>
+              </div>
+            )}
           </Panel>
         </div>
+
+        {state && !state.revoked && (
+          <Panel
+            title="Waiting for your approval"
+            note="Payments this card would not make on its own wait here instead of failing. Approve with your passkey, or decline."
+          >
+            <ApprovalInbox
+              cardIds={[cardId]}
+              emptyText="Nothing waiting. A payment over the limit, at a merchant off the list, or off the card's purpose will appear here."
+              onSettled={refresh}
+            />
+          </Panel>
+        )}
 
         {stored && state && !state.revoked && (
           <Panel

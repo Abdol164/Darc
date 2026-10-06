@@ -61,7 +61,9 @@ function VerifyInner() {
         ? { kind: "revoked" as const, text: "Revoked — do not transact with this agent" }
         : result.expired
           ? { kind: "expired" as const, text: "Expired — this card is past its validity date" }
-          : { kind: "active" as const, text: "Active — this agent holds a live, unrevoked card" };
+          : result.frozen
+            ? { kind: "frozen" as const, text: "Frozen — a burst of attempts stopped this card until its owner says otherwise" }
+            : { kind: "active" as const, text: "Active — this agent holds a live, unrevoked card" };
 
   return (
     <Shell
@@ -125,6 +127,7 @@ function VerifyInner() {
             <div className={p.grid2}>
               <Panel title="Card policy">
                 <DataRow label="Owner" value={result.owner ? <AddressLink address={result.owner} /> : "—"} />
+                <DataRow label="For" value={result.purpose || "Not stated"} />
                 <DataRow label="Daily limit" value={result.dailyCap !== undefined ? `$${formatUnits(result.dailyCap, 6)}` : "—"} />
                 <DataRow
                   label="Remaining today"

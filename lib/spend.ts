@@ -25,16 +25,23 @@ export type SignedSpend = { auth: SpendAuth; signature: Hex; proof: Hex[] };
 
 export type RelayResult = {
   ok: boolean;
-  /** The refusal's custom error name (e.g. DailyCapExceeded), or null when approved. */
+  /**
+   * The refusal's custom error name (e.g. DailyCapExceeded), null when approved, or, for a
+   * held payment, why it needs the owner (a refusal name or "Off-purpose: …").
+   */
   reason: string | null;
+  /** True when the payment was held on-chain for the owner's approval instead of refused. */
+  pending?: boolean;
+  /** The held payment's id (its EIP-712 digest), to approve or decline it. */
+  requestId?: Hex;
   hash: Hex;
   blockNumber: string;
   /** Submit to receipt, measured by the relayer. */
   settleMs: number;
 };
 
-/** Authorisations stay valid for five minutes after signing. */
-const AUTH_LIFETIME_S = 300;
+/** Authorisations stay valid for ten minutes: long enough for an owner to approve a held one from their phone. */
+const AUTH_LIFETIME_S = 600;
 
 export async function signSpend(opts: {
   cardId: Hex;
@@ -63,8 +70,16 @@ export async function signSpend(opts: {
   return { auth, signature, proof: merchantProof(opts.merchants, opts.merchant) };
 }
 
-/** Posts a signed authorisation to the relayer. `base` is empty in the browser. */
-export async function relay(signed: SignedSpend, base = ""): Promise<RelayResult> {
+/**
+ * Posts a signed authorisation to the relayer. `base` is empty in the browser. `memo` says what
+ * the payment is for (checked against the card's purpose); `escalate: false` asks for a plain
+ * refusal instead of holding an out-of-policy payment for the owner.
+ */
+export async function relay(
+  signed: SignedSpend,
+  base = "",
+  opts: { memo?: string; escalate?: boolean } = {},
+): Promise<RelayResult> {
   const { auth, signature, proof } = signed;
   const res = await fetch(`${base}/api/relay`, {
     method: "POST",
@@ -79,6 +94,8 @@ export async function relay(signed: SignedSpend, base = ""): Promise<RelayResult
       },
       signature,
       proof,
+      memo: opts.memo,
+      escalate: opts.escalate,
     }),
   });
   const data = (await res.json()) as Partial<RelayResult> & { error?: string };
@@ -86,6 +103,8 @@ export async function relay(signed: SignedSpend, base = ""): Promise<RelayResult
   return {
     ok: Boolean(data.ok),
     reason: data.reason ?? null,
+    pending: data.pending,
+    requestId: data.requestId,
     hash: data.hash as Hex,
     blockNumber: data.blockNumber ?? "",
     settleMs: data.settleMs ?? 0,

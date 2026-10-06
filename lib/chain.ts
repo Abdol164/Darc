@@ -15,6 +15,7 @@ import {
   reputationReaderAbi,
   reputationRegistryAbi,
   spendGateAbi,
+  spendRouterAbi,
 } from "./contracts";
 
 export const chain = defineChain(MONAD_TESTNET);
@@ -37,6 +38,13 @@ export type CardState = {
   issuedAt: number;
   policyVersion: number;
   agentId: string;
+  /** Frozen by the velocity rule; only the owner can lift it. */
+  frozen: boolean;
+  /** Velocity rule: more than `maxBurst` attempts in `burstWindow` seconds freezes the card. 0 = none. */
+  maxBurst: number;
+  burstWindow: number;
+  /** What the owner says the card is for. Requests that do not fit it go to the owner. */
+  purpose: string;
 };
 
 export async function loadCardState(cardId: Hex): Promise<CardState | null> {
@@ -48,7 +56,7 @@ export async function loadCardState(cardId: Hex): Promise<CardState | null> {
   });
   if (card.agentKey === "0x0000000000000000000000000000000000000000") return null;
 
-  const [remaining, agentId] = await Promise.all([
+  const [remaining, agentId, frozen, purpose] = await Promise.all([
     publicClient.readContract({
       address: ADDRESSES.spendGate,
       abi: spendGateAbi,
@@ -59,6 +67,18 @@ export async function loadCardState(cardId: Hex): Promise<CardState | null> {
       address: ADDRESSES.cardManager,
       abi: cardManagerAbi,
       functionName: "agentIdOfCard",
+      args: [cardId],
+    }),
+    publicClient.readContract({
+      address: ADDRESSES.spendRouter,
+      abi: spendRouterAbi,
+      functionName: "frozen",
+      args: [cardId],
+    }),
+    publicClient.readContract({
+      address: ADDRESSES.cardManager,
+      abi: cardManagerAbi,
+      functionName: "purposeOf",
       args: [cardId],
     }),
   ]);
@@ -75,6 +95,10 @@ export async function loadCardState(cardId: Hex): Promise<CardState | null> {
     issuedAt: Number(card.issuedAt),
     policyVersion: Number(card.policyVersion),
     agentId: agentId.toString(),
+    frozen,
+    maxBurst: card.maxBurst,
+    burstWindow: card.burstWindow,
+    purpose,
   };
 }
 

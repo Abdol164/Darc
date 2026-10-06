@@ -10,6 +10,7 @@ import { Button, Empty, Notice, Panel, ui as u } from "@/components/ui";
 import { AgentCardFace } from "@/components/agent-card";
 import { pieces as p, tintClass } from "@/components/pieces";
 import { PlusIcon } from "@/components/icons";
+import { BURST_WINDOW_S, DEFAULT_PURPOSE, RuleFields } from "@/components/rule-fields";
 import { MERCHANTS } from "@/config/merchants";
 import { ADDRESSES, ausdFaucetAbi, cardManagerAbi, erc20Abi } from "@/lib/contracts";
 import { merchantRoot } from "@/lib/merkle";
@@ -26,6 +27,8 @@ export default function CardsPage() {
   const [issuing, setIssuing] = useState(false);
   const [cap, setCap] = useState(50);
   const [picked, setPicked] = useState<Address[]>([MERCHANTS[0].address, MERCHANTS[1].address]);
+  const [purpose, setPurpose] = useState(DEFAULT_PURPOSE);
+  const [burst, setBurst] = useState(5);
   const [funds, setFunds] = useState<{ mon: bigint; usd: bigint; allowance: bigint }>();
   const [justIssued, setJustIssued] = useState<string>();
 
@@ -99,8 +102,17 @@ export default function CardsPage() {
       const hash = await wallet.writeContract({
         address: ADDRESSES.cardManager,
         abi: cardManagerAbi,
-        functionName: "issueCard",
-        args: [agentAddress, BigInt(cap) * 1_000_000n, merchantRoot(picked), validUntil, "ipfs://agentcard"],
+        functionName: "issueCardWithRules",
+        args: [
+          agentAddress,
+          BigInt(cap) * 1_000_000n,
+          merchantRoot(picked),
+          validUntil,
+          burst,
+          burst ? BURST_WINDOW_S : 0,
+          purpose.trim(),
+          "ipfs://agentcard",
+        ],
         account: wallet.account!,
         chain,
       });
@@ -218,6 +230,8 @@ export default function CardsPage() {
               })}
             </div>
 
+            <RuleFields purpose={purpose} onPurpose={setPurpose} burst={burst} onBurst={setBurst} />
+
             <div className={p.btnRow}>
               <Button variant="primary" onClick={issue} disabled={!!busy}>
                 {busy ?? `Issue to ${AGENT.name}`}
@@ -258,6 +272,7 @@ export default function CardsPage() {
                   remaining={state?.remaining}
                   revoked={state?.revoked ?? false}
                   expired={state?.expired}
+                  frozen={state?.frozen}
                   merchantCount={stored.merchants.length}
                 />
               </Link>

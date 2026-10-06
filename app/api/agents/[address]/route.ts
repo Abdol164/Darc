@@ -30,6 +30,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
         owner: record.owner ?? null,
         approved: record.approved,
         refused: record.declined,
+        frozen: record.frozen,
+        purpose: record.purpose ?? null,
         dailyLimitUsd: usd(record.dailyCap),
         remainingTodayUsd: record.revoked ? 0 : usd(record.remaining),
         activeSince: iso(record.issuedAt),
@@ -37,7 +39,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
         verdicts: record.attestations.map((a) => ({
           merchant: a.client,
           verdict: a.verdict,
-          reason: a.verdict === "approved" ? null : a.reason,
+          // A plain approval has no reason; an owner override keeps its "OwnerApproved" tag.
+          reason: a.reason === "approved" ? null : a.reason,
         })),
         chainId: 10143,
         verifyUrl: `${origin}/verify?agent=${record.agentKey}`,

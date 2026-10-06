@@ -10,6 +10,7 @@ export const STATUS = {
   revoked: { label: "Revoked", color: "var(--paper-raised)", bg: "var(--void)" },
   pending: { label: "Pending", color: "var(--hold)", bg: "var(--hold-wash)" },
   expired: { label: "Expired", color: "var(--ink-3)", bg: "var(--paper-sunk)" },
+  frozen: { label: "Frozen", color: "var(--cobalt)", bg: "var(--cobalt-wash)" },
 } as const;
 
 export type StatusKind = keyof typeof STATUS;

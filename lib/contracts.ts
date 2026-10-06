@@ -3,7 +3,7 @@ import { parseAbi, keccak256, toBytes, type Hex } from "viem";
 import { ADDRESSES } from "@/config/addresses";
 
 /** First block of the deployment, so log queries do not scan the whole chain. */
-export const DEPLOY_BLOCK = 65969571n;
+export const DEPLOY_BLOCK = 68711680n;
 
 export const reputationReaderAbi = parseAbi([
   "struct AgentReport { bool found; uint256 agentId; bytes32 cardId; address owner; uint64 approvedCount; uint64 declinedCount; bool revoked; bool expired; uint64 activeSince; uint64 clientCount; }",
@@ -12,12 +12,15 @@ export const reputationReaderAbi = parseAbi([
 ]);
 
 export const cardManagerAbi = parseAbi([
-  "struct Card { address agentKey; address owner; uint256 dailyCap; bytes32 merchantRoot; uint64 validUntil; uint64 issuedAt; bool revoked; uint64 policyVersion; }",
+  "struct Card { address agentKey; address owner; uint256 dailyCap; bytes32 merchantRoot; uint64 validUntil; uint64 issuedAt; bool revoked; uint64 policyVersion; uint16 maxBurst; uint32 burstWindow; }",
   "function getCard(bytes32 cardId) view returns (Card)",
+  "function purposeOf(bytes32 cardId) view returns (string)",
   "function agentIdOfCard(bytes32) view returns (uint256)",
   "function cardIdOfAgentKey(address) view returns (bytes32)",
   "function cardIdFor(address owner, address agentKey) pure returns (bytes32)",
   "function issueCard(address agentKey, uint256 dailyCap, bytes32 merchantRoot, uint64 validUntil, string agentURI) returns (bytes32, uint256)",
+  "function issueCardWithRules(address agentKey, uint256 dailyCap, bytes32 merchantRoot, uint64 validUntil, uint16 maxBurst, uint32 burstWindow, string purpose, string agentURI) returns (bytes32, uint256)",
+  "function setRules(bytes32 cardId, uint16 maxBurst, uint32 burstWindow, string purpose)",
   "function revoke(bytes32 cardId)",
   "function updatePolicy(bytes32 cardId, uint256 dailyCap, bytes32 merchantRoot, uint64 validUntil)",
 ]);
@@ -35,8 +38,14 @@ export const SPEND_AUTH_TYPES = {
   ],
 } as const;
 
+/** What an owner signs to approve one held payment. Pinned by CrossLanguageConstants.t.sol. */
+export const OWNER_APPROVAL_TYPES = {
+  OwnerApproval: [{ name: "authDigest", type: "bytes32" }],
+} as const;
+
 export const merchantAbi = parseAbi([
   "function charge((bytes32 cardId,address merchant,address token,uint256 amount,uint256 nonce,uint256 deadline,uint64 policyVersion) auth, bytes agentSig, bytes32[] merchantProof) returns (bool, bytes4)",
+  "function chargeApproved(bytes32 authDigest, bytes ownerSig) returns (bool, bytes4)",
 ]);
 
 export const erc20Abi = parseAbi([
@@ -60,8 +69,18 @@ export const spendGateAbi = parseAbi([
 ]);
 
 export const spendRouterAbi = parseAbi([
+  "struct SpendAuth { bytes32 cardId; address merchant; address token; uint256 amount; uint256 nonce; uint256 deadline; uint64 policyVersion; }",
+  "struct Request { SpendAuth auth; bytes agentSig; bytes32[] merchantProof; string reason; uint64 requestedAt; uint8 status; }",
+  "function frozen(bytes32 cardId) view returns (bool)",
+  "function unfreeze(bytes32 cardId)",
+  "function requestIdsOf(bytes32 cardId) view returns (bytes32[])",
+  "function getRequest(bytes32 authDigest) view returns (Request)",
+  "function requestApproval(SpendAuth auth, bytes agentSig, bytes32[] merchantProof, string reason) returns (bytes32, bytes4)",
   "event SpendDeclined(bytes32 indexed cardId, address indexed merchant, uint256 amount, uint256 nonce, bytes4 reasonSelector)",
 ]);
+
+/** Request status, as SpendRouter.Status numbers it. */
+export const REQUEST_STATUS = ["none", "open", "approved", "declined"] as const;
 
 /** Canonical ERC-8004 registries — the same contracts any third party would query. */
 export const identityRegistryAbi = parseAbi([
@@ -76,7 +95,7 @@ export const reputationRegistryAbi = parseAbi([
 ]);
 
 /**
- * SpendGate's custom errors, by selector. SpendRouter records the selector on-chain, so
+ * SpendGate's and SpendRouter's decline reasons, by selector. SpendRouter records the selector on-chain, so
  * this is how a refusal becomes readable. Pinned in Solidity by
  * contracts/test/CrossLanguageConstants.t.sol, so drift breaks CI rather than this page.
  */
@@ -92,6 +111,9 @@ export const DECLINE_REASONS: Record<string, string> = Object.fromEntries(
     "NonceUsed",
     "MerchantNotAllowed",
     "DailyCapExceeded",
+    // Raised by SpendRouter, before the gate: the velocity rule and its freeze.
+    "VelocityExceeded",
+    "CardFrozen",
   ].map((name) => [keccak256(toBytes(`${name}()`)).slice(0, 10), name]),
 );
 

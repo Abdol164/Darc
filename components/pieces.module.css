@@ -379,3 +379,36 @@
   overflow-wrap: anywhere;
   color: var(--ink-2);
 }
+
+/* ---- rules (purpose, velocity) ------------------------------------------------------- */
+.textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px var(--sp-3);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--rd-1);
+  font-family: var(--sans);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  color: var(--ink);
+  resize: vertical;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+.textarea::placeholder {
+  color: var(--ink-3);
+}
+.textarea:focus-visible {
+  outline: none;
+  border-color: var(--cobalt);
+  box-shadow: var(--focus);
+}
+.fieldHint {
+  display: block;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--ink-3);
+}

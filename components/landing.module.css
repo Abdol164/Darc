@@ -168,6 +168,12 @@
   display: block;
   font-weight: 500;
 }
+.heldCell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
 .goalAt {
   display: block;
   font-size: var(--fs-xs);
@@ -516,8 +522,14 @@
   animation-delay: 1120ms;
 }
 .checks.live tbody tr:nth-child(10) {
-  animation: refuse 2800ms ease both;
   animation-delay: 1260ms;
+}
+.checks.live tbody tr:nth-child(11) {
+  animation-delay: 1400ms;
+}
+.checks.live tbody tr:last-child {
+  animation: refuse 2800ms ease both;
+  animation-delay: 1540ms;
 }
 
 /* Sections rise in as they scroll into view. Browsers without scroll timelines show them as they are. */

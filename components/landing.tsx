@@ -23,11 +23,14 @@ import l from "./landing.module.css";
 
 const DEMO_CAP_USD = 50;
 
-/** What each of Atlas's goals meets on a $50 card that allows the first two merchants. */
-const RUN: Record<string, { ok: boolean; reason?: string }> = {
-  hosting: { ok: true },
-  "api-credits": { ok: false, reason: "DailyCapExceeded" },
-  "data-feed": { ok: false, reason: "MerchantNotAllowed" },
+/**
+ * What each of Atlas's goals meets on a $50 card that allows the first two merchants. The two
+ * the card will not pay on its own are held for the owner rather than refused.
+ */
+const RUN: Record<string, { paid: boolean; why?: string }> = {
+  hosting: { paid: true },
+  "api-credits": { paid: false, why: "Over today's limit" },
+  "data-feed": { paid: false, why: "Merchant not on the list" },
 };
 
 const STEPS = [
@@ -35,27 +38,29 @@ const STEPS = [
     n: "01",
     tag: "Owner · passkey",
     title: "Issue a card",
-    body: "Your passkey signs one transaction that sets the daily limit, the merchant list and the expiry. The agent gets a fresh key and its own ERC-8004 identity.",
-    code: "issueCard(agentKey, dailyCap, merchantRoot, validUntil)",
+    body: "Your passkey signs one transaction that sets the daily limit, the merchant list, the expiry, what the card is for and how fast it may be used. The agent gets a fresh key and its own ERC-8004 identity.",
+    code: "issueCardWithRules(agentKey, dailyCap, merchantRoot, validUntil, maxBurst, window, purpose)",
   },
   {
     n: "02",
     tag: "Agent · signature",
     title: "The agent asks to pay",
-    body: "The agent only ever signs a payment authorisation. It holds no funds and no gas: a relayer submits the request and the contract checks it against the card.",
+    body: "The agent only ever signs a payment authorisation. It holds no funds and no gas: a relayer submits the request and the contract checks it against the card. A burst of attempts freezes the card on-chain.",
     code: "SpendAuth(cardId, merchant, token, amount, nonce, deadline, policyVersion)",
   },
   {
     n: "03",
-    tag: "Merchant · registry",
-    title: "The verdict is recorded",
-    body: "Approved or refused, the merchant writes the outcome and its reason to the shared reputation registry. Anyone can read an agent's record with one call.",
-    code: "reportForAgentKey(agentKey) → approved, declined, revoked",
+    tag: "Owner · Face ID",
+    title: "Out of policy? You decide",
+    body: "Over the limit, off the merchant list or off the card's purpose, the payment waits for one passkey tap on your phone instead of failing. Whatever happens, the merchant writes it to the shared reputation registry.",
+    code: "OwnerApproval(authDigest) → OwnerApproved",
   },
 ];
 
-/** SpendGate's checks, in the order it runs them. Any one failing refuses the payment. */
+/** SpendRouter's two checks, then SpendGate's ten, in the order they run. Any one failing refuses. */
 const CHECKS = [
+  ["The card is not frozen", "CardFrozen"],
+  ["It is not one attempt too many for the card's pace", "VelocityExceeded"],
   ["The card exists", "CardNotFound"],
   ["It has not been revoked", "CardRevoked"],
   ["It has not expired", "CardExpired"],
@@ -151,7 +156,7 @@ export function Landing() {
           )}
 
           <div className={`${p.stats} ${l.facts} ${l.in} ${l.d6}`}>
-            <Stat label="Checks on every payment" value="10" note="each refusal names its reason" />
+            <Stat label="Checks on every payment" value="12" note="each refusal names its reason" />
             <Stat label="Transactions to revoke" value="1" note="permanent from the next block" />
             <Stat label="Held by the agent" value="$0" note="it signs; it never holds funds or gas" />
             <Stat label="Settles in" value="AUSD" note="Agora's dollar stablecoin, not a mock" />
@@ -208,22 +213,30 @@ export function Landing() {
                   {TASKS.map((t) => {
                     const v = RUN[t.id];
                     return (
-                      <tr key={t.id} className={v.ok ? u.railOk : u.railNo}>
+                      <tr key={t.id} className={v.paid ? u.railOk : u.railHold}>
                         <td>
                           <span className={l.goal}>{t.goal}</span>
                           <span className={l.goalAt}>at {t.merchantName}</span>
                         </td>
-                        <td className={`${u.cellMono} ${v.ok ? "" : l.struck}`}>${t.amountUsd}</td>
+                        <td className={u.cellMono}>${t.amountUsd}</td>
                         <td>
-                          {v.ok ? <StatusBadge kind="approved" label="Paid" /> : <StatusBadge kind="declined" label={v.reason} />}
+                          {v.paid ? (
+                            <StatusBadge kind="approved" label="Paid" />
+                          ) : (
+                            <span className={l.heldCell}>
+                              <StatusBadge kind="pending" label="Awaiting you" />
+                              <span className={l.goalAt}>{v.why}</span>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );
                   })}
                 </Table>
                 <p className={l.tableFoot}>
-                  Refused amounts never move. Each verdict is written to the reputation registry by
-                  the merchant, so Darc cannot edit its own agents&apos; record.
+                  The two the card will not pay on its own wait for the owner&apos;s passkey instead of
+                  failing. Approved, they settle as OwnerApproved; declined, the refusal is recorded.
+                  The merchant writes every verdict, so Darc cannot edit its own agents&apos; record.
                 </p>
               </Panel>
             </div>
@@ -264,12 +277,13 @@ export function Landing() {
           <div>
             <div className={l.kicker}>What every payment passes</div>
             <h2 className={l.h2}>
-              Ten checks, in order. <em>Any one</em> refuses.
+              Twelve checks, in order. <em>Any one</em> refuses.
             </h2>
           </div>
           <p className={l.sectionNote}>
             A refusal is not a silent failure. It is recorded with the name of the check that
-            stopped it, so &ldquo;declined&rdquo; always says why.
+            stopped it, so &ldquo;declined&rdquo; always says why. The last two can wait for your
+            approval first.
           </p>
         </header>
         <div ref={checksRef} className={`${l.checks} ${phase(checksState)}`}>

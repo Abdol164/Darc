@@ -14,6 +14,7 @@ const TONE: Record<StatusKind, string> = {
   revoked: s.sRevoked,
   pending: s.sPending,
   expired: s.sExpired,
+  frozen: s.sFrozen,
 };
 
 const cx = (...parts: (string | false | undefined)[]) => parts.filter(Boolean).join(" ");

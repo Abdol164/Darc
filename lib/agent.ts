@@ -64,7 +64,7 @@ export type Line = {
   href?: string;
 };
 
-export type TaskOutcome = "done" | "deferred" | "blocked" | "halted" | "skipped";
+export type TaskOutcome = "done" | "deferred" | "blocked" | "halted" | "skipped" | "awaiting";
 
 export const line = (who: Line["who"], text: string, tone?: Line["tone"], href?: string): Line => ({
   at: Date.now(),
@@ -135,6 +135,16 @@ export function decide(
           line("agent", `This card has been revoked. Stopping — no further payment can succeed.`, "note"),
         ],
       };
+    case "VelocityExceeded":
+    case "CardFrozen":
+      return {
+        outcome: "halted",
+        stopRun: true,
+        lines: [
+          line("chain", `Refused: ${reason}.`, "declined"),
+          line("agent", `The card has frozen: too many attempts too quickly. Stopping until the owner unfreezes it.`, "note"),
+        ],
+      };
     case "CardExpired":
       return {
         outcome: "halted",
@@ -156,17 +166,43 @@ export function decide(
   }
 }
 
+/**
+ * The card would not allow this payment, but rather than refusing it the relayer held it for
+ * the owner. The agent does not wait on a human: it notes the request and carries on.
+ */
+export function held(task: Task, reason: string): { outcome: TaskOutcome; lines: Line[] } {
+  const why =
+    reason === "DailyCapExceeded"
+      ? "it is over today's limit"
+      : reason === "MerchantNotAllowed"
+        ? `${task.merchantName} is not on this card's list`
+        : `it may not fit what the card is for (${reason.replace(/^Off-purpose: /, "")})`;
+  return {
+    outcome: "awaiting",
+    lines: [
+      line("chain", `Held for the owner's approval: ${reason}.`, "note"),
+      line(
+        "agent",
+        `The card will not pay this on its own because ${why}. I have asked the owner to approve $${task.amountUsd} to ${task.merchantName} and will carry on with the rest.`,
+        "note",
+      ),
+    ],
+  };
+}
+
 /** Closing summary, so a run ends with a conclusion rather than just stopping. */
 export function summarise(outcomes: Record<string, TaskOutcome>): Line {
   const counts = Object.values(outcomes);
   const done = counts.filter((o) => o === "done").length;
   const deferred = counts.filter((o) => o === "deferred").length;
   const blocked = counts.filter((o) => o === "blocked").length;
+  const awaiting = counts.filter((o) => o === "awaiting").length;
   const halted = counts.some((o) => o === "halted");
 
   if (halted) return line("agent", `Run stopped early: the card is no longer usable.`, "note");
   const parts = [`${done} settled`];
   if (deferred) parts.push(`${deferred} deferred to tomorrow`);
   if (blocked) parts.push(`${blocked} needs the owner`);
+  if (awaiting) parts.push(`${awaiting} waiting for the owner's approval`);
   return line("agent", `Done for now — ${parts.join(", ")}.`, "note");
 }

@@ -14,6 +14,7 @@ const RULE = "#e7e3da";
 const INK_3 = "#646c7e";
 const MARK: Record<Standing, string> = {
   active: "#1fa67a",
+  frozen: "#2446f5",
   revoked: INK,
   expired: INK_3,
   unknown: INK_3,
@@ -28,6 +29,7 @@ const HEADERS = {
 function label(standing: Standing, approved: number, refused: number) {
   if (standing === "unknown") return "NO RECORD";
   if (standing === "revoked") return `REVOKED · DO NOT TRANSACT`;
+  if (standing === "frozen") return `FROZEN · ${approved} APPROVED · ${refused} REFUSED`;
   const prefix = standing === "expired" ? "EXPIRED" : "ACTIVE";
   return `${prefix} · ${approved} APPROVED · ${refused} REFUSED`;
 }

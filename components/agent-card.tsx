@@ -16,6 +16,8 @@ export type CardFaceProps = {
   remaining?: bigint;
   revoked: boolean;
   expired?: boolean;
+  /** Frozen by the velocity rule: the face frosts over until the owner unfreezes it. */
+  frozen?: boolean;
   merchantCount: number;
   small?: boolean;
 };
@@ -28,16 +30,23 @@ export function AgentCardFace({
   remaining,
   revoked,
   expired,
+  frozen,
   merchantCount,
   small,
 }: CardFaceProps) {
-  const state = revoked ? "revoked" : expired ? "expired" : "active";
+  const state = revoked ? "revoked" : expired ? "expired" : frozen ? "frozen" : "active";
   return (
     // The wrapper casts the shadow: the face is clipped to its notch, and a clip would cut
     // off any shadow drawn on the face itself.
     <div className={[c.wrap, small && c.wrapSm].filter(Boolean).join(" ")}>
       <div
-        className={[c.face, small && c.faceSm, revoked && c.revoked, !revoked && expired && c.expired]
+        className={[
+          c.face,
+          small && c.faceSm,
+          revoked && c.revoked,
+          !revoked && expired && c.expired,
+          state === "frozen" && c.frozen,
+        ]
           .filter(Boolean)
           .join(" ")}
       >

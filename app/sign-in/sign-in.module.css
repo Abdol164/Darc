@@ -380,6 +380,10 @@
   font-weight: 600;
   color: var(--signal-refuse);
 }
+.hold {
+  font-weight: 600;
+  color: var(--hold-mark);
+}
 
 /* The record writes itself, one verdict at a time. */
 .ticker {
