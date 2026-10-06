@@ -15,6 +15,9 @@ import { errorMessage } from "@/lib/server";
 const chain = defineChain(MONAD_TESTNET);
 const publicClient = createPublicClient({ chain, transport: http(RPC_URL) });
 
+/** A transfer and its receipt; capped so a slow RPC cannot hold a function open. */
+export const maxDuration = 30;
+
 /** Enough for a handful of owner actions; small on purpose so an open endpoint cannot be drained. */
 const TOP_UP = parseEther("0.25");
 const CEILING = parseEther("0.5");

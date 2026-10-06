@@ -21,6 +21,9 @@ type Body = {
   proof?: Hex[];
 };
 
+/** Submit, wait for the receipt, re-simulate: seconds on Monad, but never a hung function. */
+export const maxDuration = 30;
+
 /**
  * The relayer: submits an agent-signed authorization and pays its gas.
  *

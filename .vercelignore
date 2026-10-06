@@ -1,0 +1,7 @@
+# Never upload local secrets; production keys are set with `vercel env add`.
+.env
+.env.*
+# Not part of the web build.
+contracts
+.next
+node_modules
