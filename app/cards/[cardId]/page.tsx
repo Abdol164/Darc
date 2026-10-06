@@ -15,7 +15,7 @@ import type { Address, Hex } from "viem";
 import { Shell } from "@/components/shell";
 import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
 import { AgentCardFace } from "@/components/agent-card";
-import { AddressLink, MerchantCell, pieces as p, tintClass } from "@/components/pieces";
+import { AddressLink, MerchantCell, Snippet, pieces as p, tintClass } from "@/components/pieces";
 import { MERCHANTS, merchantName } from "@/config/merchants";
 import { ADDRESSES, cardManagerAbi } from "@/lib/contracts";
 import { merchantRoot } from "@/lib/merkle";
@@ -42,6 +42,8 @@ export default function CardDetailPage() {
   const [picked, setPicked] = useState<Address[]>([]);
   /** The policy version in force before the last edit, so a stale authorisation can be shown failing. */
   const [staleVersion, setStaleVersion] = useState<number>();
+  const [showConnect, setShowConnect] = useState(false);
+  const [origin, setOrigin] = useState("");
   const logRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -54,6 +56,8 @@ export default function CardDetailPage() {
     setStored(getCard(cardId));
     void refresh().finally(() => setLoaded(true));
   }, [cardId, refresh]);
+
+  useEffect(() => setOrigin(window.location.origin), []);
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
@@ -463,6 +467,50 @@ export default function CardDetailPage() {
             )}
           </Panel>
         </div>
+
+        {stored && state && !state.revoked && (
+          <Panel
+            title="Connect an agent"
+            note="Give Claude, or any MCP client, this card. It receives the card's agent key, not yours: it can sign payments within these limits and nothing else, and revoking the card disables it."
+            action={
+              <Button variant="ghost" onClick={() => setShowConnect((v) => !v)}>
+                {showConnect ? "Hide" : "Show connection command"}
+              </Button>
+            }
+          >
+            {showConnect ? (
+              <div className={p.merchantKit}>
+                <Snippet
+                  label="1 · Get the Darc MCP server"
+                  text="git clone https://github.com/Abdol164/Darc ~/Darc && cd ~/Darc && npm install"
+                />
+                <Snippet
+                  label="2 · Add it to Claude Code"
+                  text={[
+                    "claude mcp add darc",
+                    `-e DARC_URL=${origin}`,
+                    `-e DARC_CARD_ID=${cardId}`,
+                    `-e DARC_AGENT_KEY=${stored.agentPrivateKey}`,
+                    `-e DARC_MERCHANTS=${stored.merchants.join(",")}`,
+                    "-- node $HOME/Darc/mcp/server.ts",
+                  ].join(" ")}
+                />
+                <Snippet
+                  label="3 · Then ask"
+                  text={`Check your Darc card, then pay Lagos Cloud Hosting $20 for this month's hosting and Horizon Data API $200 for API credits.`}
+                />
+                <p className={u.leadTight}>
+                  Other MCP clients run <code>node ~/Darc/mcp/server.ts</code> with the same four
+                  environment variables. Every payment it makes shows up in this card&apos;s record.
+                </p>
+              </div>
+            ) : (
+              <p className={u.leadTight}>
+                The command contains this card&apos;s agent key, so it stays hidden until you ask.
+              </p>
+            )}
+          </Panel>
+        )}
 
         <Panel
           title="On-chain record for this card"

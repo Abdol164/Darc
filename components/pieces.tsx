@@ -1,7 +1,7 @@
 "use client";
 
 /** Composed pieces built from the primitives, shared by more than one screen. */
-import type { ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { merchantByAddress, merchantName } from "@/config/merchants";
 import { addressUrl } from "@/lib/chain";
 import { ExternalIcon } from "./icons";
@@ -38,6 +38,32 @@ export function AddressLink({ address, label }: { address: string; label?: strin
       <span className={p.monoText}>{label ?? `${address.slice(0, 8)}…${address.slice(-6)}`}</span>
       <ExternalIcon />
     </a>
+  );
+}
+
+/** A line of code with a copy button. Falls back to selecting the text if the clipboard refuses. */
+export function Snippet({ label, text }: { label: string; text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async (e: MouseEvent<HTMLButtonElement>) => {
+    const code = e.currentTarget.parentElement?.parentElement?.querySelector("code");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      if (code) window.getSelection()?.selectAllChildren(code);
+    }
+  };
+  return (
+    <div className={p.snippet}>
+      <div className={p.snippetHead}>
+        <span>{label}</span>
+        <button type="button" className={p.copy} onClick={copy}>
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <code className={p.snippetCode}>{text}</code>
+    </div>
   );
 }
 

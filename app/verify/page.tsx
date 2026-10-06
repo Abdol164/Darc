@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { formatUnits, getAddress, isAddress } from "viem";
 import { Shell } from "@/components/shell";
 import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
-import { AddressLink, MerchantCell, Stat, pieces as p } from "@/components/pieces";
+import { AddressLink, MerchantCell, Snippet, Stat, pieces as p } from "@/components/pieces";
 import { ERC8004 } from "@/config/chain";
 import { loadAgentRecord, type AgentRecord } from "@/lib/report";
 
@@ -206,32 +206,6 @@ function VerifyInner() {
         )}
       </div>
     </Shell>
-  );
-}
-
-/** A line of code with a copy button. Falls back to selecting the text if the clipboard refuses. */
-function Snippet({ label, text }: { label: string; text: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    const code = e.currentTarget.parentElement?.querySelector("code");
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1600);
-    } catch {
-      if (code) window.getSelection()?.selectAllChildren(code);
-    }
-  };
-  return (
-    <div className={p.snippet}>
-      <div className={p.snippetHead}>
-        <span>{label}</span>
-        <button type="button" className={u.linkBtn} onClick={copy}>
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
-      <code className={p.snippetCode}>{text}</code>
-    </div>
   );
 }
 
