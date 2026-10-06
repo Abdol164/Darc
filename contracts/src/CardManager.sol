@@ -26,6 +26,10 @@ contract CardManager is IERC721Receiver {
         uint64 issuedAt;
         bool revoked;
         uint64 policyVersion;
+        /// @dev Velocity rule, enforced by SpendRouter: more than `maxBurst` attempts within
+        ///      `burstWindow` seconds freezes the card. Zero means no rule.
+        uint16 maxBurst;
+        uint32 burstWindow;
     }
 
     IIdentityRegistry public immutable identityRegistry;
@@ -38,6 +42,11 @@ contract CardManager is IERC721Receiver {
     mapping(address agentKey => bytes32 cardId) public cardIdOfAgentKey;
 
     mapping(bytes32 cardId => uint256 agentId) public agentIdOfCard;
+
+    /// @notice What the owner says the card is for, in plain language. Not enforced here:
+    ///         Darc's relayer checks each request against it and escalates mismatches to the
+    ///         owner instead of submitting them. Stored on-chain so the rule is public.
+    mapping(bytes32 cardId => string) public purposeOf;
 
     event CardIssued(
         bytes32 indexed cardId,
@@ -59,6 +68,7 @@ contract CardManager is IERC721Receiver {
         bytes32 indexed cardId, address indexed owner, address indexed agentKey, uint256 agentId
     );
     event AgentWalletBound(bytes32 indexed cardId, uint256 indexed agentId, address indexed agentKey);
+    event RulesUpdated(bytes32 indexed cardId, uint16 maxBurst, uint32 burstWindow, string purpose);
 
     error ZeroAgentKey();
     error AgentKeyAlreadyUsed();
@@ -67,6 +77,7 @@ contract CardManager is IERC721Receiver {
     error NotCardOwner();
     error CardIsRevoked();
     error InvalidExpiry();
+    error InvalidRule();
 
     constructor(address identityRegistry_) {
         identityRegistry = IIdentityRegistry(identityRegistry_);
@@ -85,6 +96,53 @@ contract CardManager is IERC721Receiver {
         uint64 validUntil,
         string calldata agentURI
     ) external returns (bytes32 cardId, uint256 agentId) {
+        return _issue(agentKey, dailyCap, merchantRoot, validUntil, agentURI);
+    }
+
+    /// @notice Issue a card with a velocity rule and a stated purpose.
+    function issueCardWithRules(
+        address agentKey,
+        uint256 dailyCap,
+        bytes32 merchantRoot,
+        uint64 validUntil,
+        uint16 maxBurst,
+        uint32 burstWindow,
+        string calldata purpose,
+        string calldata agentURI
+    ) external returns (bytes32 cardId, uint256 agentId) {
+        (cardId, agentId) = _issue(agentKey, dailyCap, merchantRoot, validUntil, agentURI);
+        _setRules(cardId, maxBurst, burstWindow, purpose);
+    }
+
+    /// @notice Change the velocity rule and stated purpose. Unlike `updatePolicy` this does
+    ///         not bump `policyVersion`: neither field is part of what the agent signs.
+    function setRules(bytes32 cardId, uint16 maxBurst, uint32 burstWindow, string calldata purpose) external {
+        Card storage card = _cards[cardId];
+        if (card.agentKey == address(0)) revert CardNotFound();
+        if (card.owner != msg.sender) revert NotCardOwner();
+        if (card.revoked) revert CardIsRevoked();
+        _setRules(cardId, maxBurst, burstWindow, purpose);
+    }
+
+    function _setRules(bytes32 cardId, uint16 maxBurst, uint32 burstWindow, string calldata purpose)
+        internal
+    {
+        // A burst limit needs a window to count in, and a window needs a limit.
+        if ((maxBurst == 0) != (burstWindow == 0)) revert InvalidRule();
+        Card storage card = _cards[cardId];
+        card.maxBurst = maxBurst;
+        card.burstWindow = burstWindow;
+        purposeOf[cardId] = purpose;
+        emit RulesUpdated(cardId, maxBurst, burstWindow, purpose);
+    }
+
+    function _issue(
+        address agentKey,
+        uint256 dailyCap,
+        bytes32 merchantRoot,
+        uint64 validUntil,
+        string calldata agentURI
+    ) internal returns (bytes32 cardId, uint256 agentId) {
         if (agentKey == address(0)) revert ZeroAgentKey();
         if (validUntil <= block.timestamp) revert InvalidExpiry();
         // One card per agent key, ever. A revoked key is burned permanently: re-issuing
@@ -104,7 +162,9 @@ contract CardManager is IERC721Receiver {
             validUntil: validUntil,
             issuedAt: uint64(block.timestamp),
             revoked: false,
-            policyVersion: 1
+            policyVersion: 1,
+            maxBurst: 0,
+            burstWindow: 0
         });
         cardIdOfAgentKey[agentKey] = cardId;
         agentIdOfCard[cardId] = agentId;

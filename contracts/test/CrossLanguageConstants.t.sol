@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {SpendGate} from "../src/SpendGate.sol";
+import {SpendRouter} from "../src/SpendRouter.sol";
 import {AgentCardTypes} from "../src/lib/AgentCardTypes.sol";
 
 /// @notice Pins the constants that the TypeScript layer recomputes independently.
@@ -57,5 +58,17 @@ contract CrossLanguageConstantsTest is Test {
         assertEq(SpendGate.NonceUsed.selector, bytes4(0x1f6d5aef), "NonceUsed");
         assertEq(SpendGate.MerchantNotAllowed.selector, bytes4(0x84d9e4ff), "MerchantNotAllowed");
         assertEq(SpendGate.DailyCapExceeded.selector, bytes4(0xcc70389d), "DailyCapExceeded");
+        assertEq(SpendRouter.VelocityExceeded.selector, bytes4(0xc03855c3), "VelocityExceeded");
+        assertEq(SpendRouter.CardFrozen.selector, bytes4(0xc0fa2d84), "CardFrozen");
+    }
+
+    /// @dev Mirrors OWNER_APPROVAL_TYPES in lib/contracts.ts: the owner signs this in the
+    ///      browser to approve one payment, and the gate verifies it.
+    function test_ownerApprovalTypehash_isPinned() public pure {
+        assertEq(
+            keccak256("OwnerApproval(bytes32 authDigest)"),
+            0x6657c888fb734ca672b166b91ccf7f15620d34c159663efd765071de64be8a25,
+            "OwnerApproval typehash changed -- update OWNER_APPROVAL_TYPES in lib/contracts.ts"
+        );
     }
 }

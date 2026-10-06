@@ -78,6 +78,6 @@ contract DemoScriptTest is AgentCardBase {
         bytes memory sig = _sign(auth, wrongPk);
 
         vm.expectRevert(SpendGate.BadAgentSignature.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 }

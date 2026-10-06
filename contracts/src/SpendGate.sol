@@ -42,9 +42,22 @@ contract SpendGate is EIP712, ReentrancyGuard {
     mapping(bytes32 cardId => uint64 dayBucket) public dayBucketOf;
     mapping(bytes32 cardId => uint256 spent) public spentInBucket;
 
+    /// @notice The only caller allowed to settle. SpendRouter counts every attempt for the
+    ///         velocity rule and freezes runaway cards; if anyone could call the gate
+    ///         directly, both would be bypassable.
+    address public router;
+    address private immutable _deployer;
+
+    /// @notice What an owner signs to let one specific payment through.
+    /// @dev `authDigest` is the EIP-712 digest of the agent's SpendAuth (`hashSpendAuth`),
+    ///      so the approval covers that exact payment and nothing else.
+    bytes32 public constant OWNER_APPROVAL_TYPEHASH = keccak256("OwnerApproval(bytes32 authDigest)");
+
     event SpendApproved(
         bytes32 indexed cardId, address indexed merchant, uint256 amount, uint256 nonce, uint256 spentToday
     );
+    /// @notice A payment outside the card's limits went through because the owner signed for it.
+    event OwnerOverride(bytes32 indexed cardId, bytes32 indexed authDigest);
 
     // Verification errors, in check order. The taxonomy IS the audit trail: SpendRouter
     // surfaces these selectors on-chain as decline reasons.
@@ -58,10 +71,26 @@ contract SpendGate is EIP712, ReentrancyGuard {
     error NonceUsed();
     error MerchantNotAllowed();
     error DailyCapExceeded();
+    error BadOwnerSignature();
+    error NotRouter();
+    error RouterAlreadySet();
 
     constructor(address cardManager_, address paymentToken_) EIP712("AgentCard", "1") {
         cardManager = CardManager(cardManager_);
         paymentToken = paymentToken_;
+        _deployer = msg.sender;
+    }
+
+    /// @notice Wire the router, once. The router is deployed after the gate because it is
+    ///         constructed with the gate's address.
+    function setRouter(address router_) external {
+        if (msg.sender != _deployer || router != address(0)) revert RouterAlreadySet();
+        router = router_;
+    }
+
+    modifier onlyRouter() {
+        if (msg.sender != router) revert NotRouter();
+        _;
     }
 
     function hashSpendAuth(SpendAuth calldata auth) public view returns (bytes32) {
@@ -80,25 +109,9 @@ contract SpendGate is EIP712, ReentrancyGuard {
     function spend(SpendAuth calldata auth, bytes calldata agentSig, bytes32[] calldata merchantProof)
         external
         nonReentrant
+        onlyRouter
     {
-        CardManager.Card memory card = cardManager.getCard(auth.cardId);
-
-        // 1. Card status
-        if (card.agentKey == address(0)) revert CardNotFound();
-        if (card.revoked) revert CardRevoked();
-        if (card.validUntil <= block.timestamp) revert CardExpired();
-
-        // 2. Freshness (cheap, so it runs before signature recovery)
-        if (auth.deadline < block.timestamp) revert DeadlineExpired();
-        if (auth.token != paymentToken) revert TokenNotAllowed();
-        if (auth.policyVersion != card.policyVersion) revert PolicyVersionStale();
-
-        // 3. Agent authenticity
-        address signer = ECDSA.recover(hashSpendAuth(auth), agentSig);
-        if (signer != card.agentKey) revert BadAgentSignature();
-
-        // 4. Replay
-        if (nonceUsed[auth.cardId][auth.nonce]) revert NonceUsed();
+        CardManager.Card memory card = _verifyAgentAuth(auth, agentSig);
 
         // 5. Merchant scoping. root == 0 means "any merchant" -- an explicit, documented
         //    wildcard, not an accident of an uninitialized field.
@@ -119,18 +132,76 @@ contract SpendGate is EIP712, ReentrancyGuard {
         uint256 newSpent = spent + auth.amount;
         if (newSpent > card.dailyCap) revert DailyCapExceeded();
 
-        // Effects before interaction.
+        _settle(auth, card.owner, today, newSpent);
+    }
+
+    /// @notice Settle a payment the owner explicitly approved.
+    /// @dev Runs every check `spend` runs EXCEPT the two an owner may waive for one payment:
+    ///      merchant scoping and the daily cap. The card must still be live, the auth fresh
+    ///      and signed by the agent, and the nonce unused; the owner's signature must cover
+    ///      this exact authorisation. The amount still counts toward today's spending.
+    function spendApproved(SpendAuth calldata auth, bytes calldata agentSig, bytes calldata ownerSig)
+        external
+        nonReentrant
+        onlyRouter
+    {
+        CardManager.Card memory card = _verifyAgentAuth(auth, agentSig);
+
+        bytes32 authDigest = hashSpendAuth(auth);
+        bytes32 approval = _hashTypedDataV4(keccak256(abi.encode(OWNER_APPROVAL_TYPEHASH, authDigest)));
+        if (ECDSA.recover(approval, ownerSig) != card.owner) revert BadOwnerSignature();
+
+        uint64 today = uint64(block.timestamp / 1 days);
+        uint256 spent = dayBucketOf[auth.cardId] == today ? spentInBucket[auth.cardId] : 0;
+        emit OwnerOverride(auth.cardId, authDigest);
+        _settle(auth, card.owner, today, spent + auth.amount);
+    }
+
+    /// @dev Checks 1-8 of the verification order, shared by both settlement paths.
+    function _verifyAgentAuth(SpendAuth calldata auth, bytes calldata agentSig)
+        internal
+        view
+        returns (CardManager.Card memory card)
+    {
+        card = cardManager.getCard(auth.cardId);
+
+        // 1. Card status
+        if (card.agentKey == address(0)) revert CardNotFound();
+        if (card.revoked) revert CardRevoked();
+        if (card.validUntil <= block.timestamp) revert CardExpired();
+
+        // 2. Freshness (cheap, so it runs before signature recovery)
+        if (auth.deadline < block.timestamp) revert DeadlineExpired();
+        if (auth.token != paymentToken) revert TokenNotAllowed();
+        if (auth.policyVersion != card.policyVersion) revert PolicyVersionStale();
+
+        // 3. Agent authenticity
+        address signer = ECDSA.recover(hashSpendAuth(auth), agentSig);
+        if (signer != card.agentKey) revert BadAgentSignature();
+
+        // 4. Replay
+        if (nonceUsed[auth.cardId][auth.nonce]) revert NonceUsed();
+    }
+
+    /// @dev Effects before interaction.
+    function _settle(SpendAuth calldata auth, address owner, uint64 today, uint256 newSpent) internal {
         nonceUsed[auth.cardId][auth.nonce] = true;
         if (dayBucketOf[auth.cardId] != today) dayBucketOf[auth.cardId] = today;
         spentInBucket[auth.cardId] = newSpent;
 
         emit SpendApproved(auth.cardId, auth.merchant, auth.amount, auth.nonce, newSpent);
 
-        IERC20(paymentToken).safeTransferFrom(card.owner, auth.merchant, auth.amount);
+        IERC20(paymentToken).safeTransferFrom(owner, auth.merchant, auth.amount);
+    }
+
+    /// @notice The digest an owner signs to approve `auth` (for clients and tests).
+    function hashOwnerApproval(SpendAuth calldata auth) external view returns (bytes32) {
+        return _hashTypedDataV4(keccak256(abi.encode(OWNER_APPROVAL_TYPEHASH, hashSpendAuth(auth))));
     }
 
     /// @notice Remaining allowance for the current UTC day.
     function remainingToday(bytes32 cardId) external view returns (uint256) {
+        // Over the cap is possible after an owner override; remaining is then zero.
         CardManager.Card memory card = cardManager.getCard(cardId);
         if (card.agentKey == address(0) || card.revoked) return 0;
         uint64 today = uint64(block.timestamp / 1 days);

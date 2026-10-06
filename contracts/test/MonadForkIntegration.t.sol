@@ -58,8 +58,11 @@ contract MonadForkIntegrationTest is Test {
         usd = new MockUSD();
         cardManager = new CardManager(IDENTITY_REGISTRY);
         gate = new SpendGate(address(cardManager), address(usd));
-        router = new SpendRouter(address(gate));
-        merchantA = new MockMerchant("Lagos Cloud Hosting", address(router), address(cardManager), REPUTATION_REGISTRY);
+        router = new SpendRouter(address(gate), address(cardManager));
+        gate.setRouter(address(router));
+        merchantA = new MockMerchant(
+            "Lagos Cloud Hosting", address(router), address(cardManager), REPUTATION_REGISTRY
+        );
         reader = new ReputationReader(address(cardManager), REPUTATION_REGISTRY, IDENTITY_REGISTRY);
 
         usd.mint(owner, 1_000e6);

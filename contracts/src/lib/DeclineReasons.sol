@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {SpendGate} from "../SpendGate.sol";
+import {SpendRouter} from "../SpendRouter.sol";
 
 /// @notice Maps SpendGate's custom-error selectors to short human-readable tags.
 /// @dev WHY ON-CHAIN: the refusal reason has to be readable by a plain `eth_call`, because
@@ -14,6 +15,8 @@ import {SpendGate} from "../SpendGate.sol";
 ///      `feedbackURI` are emitted in the event but not kept, so they cannot carry this.
 library DeclineReasons {
     string internal constant APPROVED = "approved";
+    /// @dev A payment outside the card's limits that the owner signed for.
+    string internal constant OWNER_APPROVED = "OwnerApproved";
 
     function tagFor(bytes4 selector) internal pure returns (string memory) {
         if (selector == SpendGate.DailyCapExceeded.selector) return "DailyCapExceeded";
@@ -26,6 +29,8 @@ library DeclineReasons {
         if (selector == SpendGate.PolicyVersionStale.selector) return "PolicyVersionStale";
         if (selector == SpendGate.BadAgentSignature.selector) return "BadAgentSignature";
         if (selector == SpendGate.NonceUsed.selector) return "NonceUsed";
+        if (selector == SpendRouter.VelocityExceeded.selector) return "VelocityExceeded";
+        if (selector == SpendRouter.CardFrozen.selector) return "CardFrozen";
         return "Unknown";
     }
 }

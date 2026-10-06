@@ -36,6 +36,8 @@ contract MockMerchant {
 
     event Charged(bytes32 indexed cardId, bool ok, bytes4 reasonSelector);
 
+    error NotThisMerchant();
+
     constructor(string memory name_, address router_, address cardManager_, address reputation_) {
         name = name_;
         router = SpendRouter(router_);
@@ -49,22 +51,39 @@ contract MockMerchant {
         returns (bool ok, bytes4 reasonSelector)
     {
         (ok, reasonSelector) = router.submit(auth, agentSig, merchantProof);
+        _attest(auth.cardId, ok, ok ? DeclineReasons.APPROVED : DeclineReasons.tagFor(reasonSelector));
+        emit Charged(auth.cardId, ok, reasonSelector);
+    }
 
-        uint256 agentId = cardManager.agentIdOfCard(auth.cardId);
-        // tag1 carries the OUTCOME REASON and tag2 the verdict. Both are stored by the
-        // registry, so a verifier reads the full trail -- refusals and their causes -- with
-        // one call, instead of scanning events the public RPC will not serve.
+    /// @notice Settle a payment the owner approved, then attest to it. The record says the
+    ///         owner stepped in ("OwnerApproved"), so an override never reads as an ordinary
+    ///         in-policy approval.
+    function chargeApproved(bytes32 authDigest, bytes calldata ownerSig)
+        external
+        returns (bool ok, bytes4 reasonSelector)
+    {
+        SpendAuth memory auth = router.getRequest(authDigest).auth;
+        // Only the merchant being paid may settle and rate the payment.
+        if (auth.merchant != address(this)) revert NotThisMerchant();
+
+        (ok, reasonSelector) = router.submitApproved(authDigest, ownerSig);
+        _attest(auth.cardId, ok, ok ? DeclineReasons.OWNER_APPROVED : DeclineReasons.tagFor(reasonSelector));
+        emit Charged(auth.cardId, ok, reasonSelector);
+    }
+
+    /// @dev tag1 carries the OUTCOME REASON and tag2 the verdict. Both are stored by the
+    ///      registry, so a verifier reads the full trail -- refusals and their causes -- with
+    ///      one call, instead of scanning events the public RPC will not serve.
+    function _attest(bytes32 cardId, bool ok, string memory reasonTag) internal {
         reputation.giveFeedback(
-            agentId,
+            cardManager.agentIdOfCard(cardId),
             ok ? SCORE_APPROVED : SCORE_DECLINED,
             0,
-            ok ? DeclineReasons.APPROVED : DeclineReasons.tagFor(reasonSelector),
+            reasonTag,
             ok ? TAG_APPROVED : TAG_DECLINED,
             "",
             "",
             bytes32(0)
         );
-
-        emit Charged(auth.cardId, ok, reasonSelector);
     }
 }

@@ -51,9 +51,13 @@ abstract contract AgentCardBase is Test {
         usd = new MockUSD();
         cardManager = new CardManager(address(identity));
         gate = new SpendGate(address(cardManager), address(usd));
-        router = new SpendRouter(address(gate));
-        merchantA = new MockMerchant("Lagos Cloud Hosting", address(router), address(cardManager), address(reputation));
-        merchantB = new MockMerchant("Horizon Data API", address(router), address(cardManager), address(reputation));
+        router = new SpendRouter(address(gate), address(cardManager));
+        gate.setRouter(address(router));
+        merchantA = new MockMerchant(
+            "Lagos Cloud Hosting", address(router), address(cardManager), address(reputation)
+        );
+        merchantB =
+            new MockMerchant("Horizon Data API", address(router), address(cardManager), address(reputation));
         reader = new ReputationReader(address(cardManager), address(reputation), address(identity));
 
         // Owner is funded and grants a BOUNDED approval to SpendGate.
@@ -109,6 +113,13 @@ abstract contract AgentCardBase is Test {
     function _sign(SpendAuth memory auth, uint256 pk) internal view returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, gate.hashSpendAuth(auth));
         return abi.encodePacked(r, s, v);
+    }
+
+    /// @notice Calls the gate directly, as the router does. The gate refuses anyone else, so
+    ///         the gate's own unit tests impersonate the router.
+    function _gateSpend(SpendAuth memory auth, bytes memory sig, bytes32[] memory proof) internal {
+        vm.prank(address(router));
+        gate.spend(auth, sig, proof);
     }
 
     /// @notice Agent signs, relayer submits through the merchant. The agent pays no gas.

@@ -62,7 +62,7 @@ contract SpendGateTest is AgentCardBase {
         // The auth goes stale in transit: this is what makes an intercepted auth useless.
         vm.warp(auth.deadline + 1);
         vm.expectRevert(SpendGate.DeadlineExpired.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 
     function test_decline_tokenNotAllowed() public {
@@ -80,14 +80,14 @@ contract SpendGateTest is AgentCardBase {
         cardManager.updatePolicy(cardId, DAILY_CAP, _rootFor(address(merchantA)), _ttl());
 
         vm.expectRevert(SpendGate.PolicyVersionStale.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 
     function test_decline_badAgentSignature_wrongSigner() public {
         SpendAuth memory auth = _auth(address(merchantA), 10e6, 1);
         bytes memory sig = _sign(auth, strangerPk);
         vm.expectRevert(SpendGate.BadAgentSignature.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 
     /// @dev Tampering with any signed field invalidates the signature.
@@ -96,16 +96,16 @@ contract SpendGateTest is AgentCardBase {
         bytes memory sig = _sign(auth, agentPk);
         auth.amount = 40e6;
         vm.expectRevert(SpendGate.BadAgentSignature.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 
     function test_decline_nonceReplay() public {
         SpendAuth memory auth = _auth(address(merchantA), 10e6, 1);
         bytes memory sig = _sign(auth, agentPk);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
 
         vm.expectRevert(SpendGate.NonceUsed.selector);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 
     /// @dev The used-set is order-independent: a lower nonce arriving late still works.
@@ -114,8 +114,8 @@ contract SpendGateTest is AgentCardBase {
         SpendAuth memory second = _auth(address(merchantA), 10e6, 2);
         SpendAuth memory first = _auth(address(merchantA), 10e6, 1);
 
-        gate.spend(second, _sign(second, agentPk), _noProof());
-        gate.spend(first, _sign(first, agentPk), _noProof());
+        _gateSpend(second, _sign(second, agentPk), _noProof());
+        _gateSpend(first, _sign(first, agentPk), _noProof());
 
         assertTrue(gate.nonceUsed(cardId, 1) && gate.nonceUsed(cardId, 2));
         assertEq(usd.balanceOf(address(merchantA)), 20e6);
@@ -130,7 +130,7 @@ contract SpendGateTest is AgentCardBase {
         SpendAuth memory auth = _auth(address(merchantB), 10e6, 1);
         bytes memory sig = _sign(auth, agentPk);
         vm.expectRevert(SpendGate.MerchantNotAllowed.selector);
-        gate.spend(auth, sig, _proofFor(address(merchantA)));
+        _gateSpend(auth, sig, _proofFor(address(merchantA)));
     }
 
     function test_decline_dailyCapExceeded_singleSpend() public {
@@ -139,7 +139,7 @@ contract SpendGateTest is AgentCardBase {
 
     function test_decline_dailyCapExceeded_cumulative() public {
         SpendAuth memory a = _auth(address(merchantA), 30e6, 1);
-        gate.spend(a, _sign(a, agentPk), _noProof());
+        _gateSpend(a, _sign(a, agentPk), _noProof());
 
         // 30 + 25 > 50: the second spend is refused even though each alone fits.
         _expectRevert(_auth(address(merchantA), 25e6, 2), SpendGate.DailyCapExceeded.selector);
@@ -147,7 +147,7 @@ contract SpendGateTest is AgentCardBase {
 
     function test_capBoundary_exactlyAtCapIsAllowed() public {
         SpendAuth memory auth = _auth(address(merchantA), DAILY_CAP, 1);
-        gate.spend(auth, _sign(auth, agentPk), _noProof());
+        _gateSpend(auth, _sign(auth, agentPk), _noProof());
         assertEq(gate.remainingToday(cardId), 0);
     }
 
@@ -158,10 +158,10 @@ contract SpendGateTest is AgentCardBase {
         cardManager.updatePolicy(cardId, DAILY_CAP, _rootFor(address(merchantA), address(merchantB)), _ttl());
 
         SpendAuth memory a = _auth(address(merchantA), 10e6, 1);
-        gate.spend(a, _sign(a, agentPk), _proofFor(address(merchantB)));
+        _gateSpend(a, _sign(a, agentPk), _proofFor(address(merchantB)));
 
         SpendAuth memory b = _auth(address(merchantB), 10e6, 2);
-        gate.spend(b, _sign(b, agentPk), _proofFor(address(merchantA)));
+        _gateSpend(b, _sign(b, agentPk), _proofFor(address(merchantA)));
 
         assertEq(usd.balanceOf(address(merchantA)), 10e6);
         assertEq(usd.balanceOf(address(merchantB)), 10e6);
@@ -173,7 +173,7 @@ contract SpendGateTest is AgentCardBase {
         cardManager.updatePolicy(cardId, DAILY_CAP, bytes32(0), _ttl());
 
         SpendAuth memory auth = _auth(address(merchantB), 10e6, 1);
-        gate.spend(auth, _sign(auth, agentPk), _noProof());
+        _gateSpend(auth, _sign(auth, agentPk), _noProof());
         assertEq(usd.balanceOf(address(merchantB)), 10e6);
     }
 
@@ -181,14 +181,14 @@ contract SpendGateTest is AgentCardBase {
 
     function test_dayRollover_capResetsInNextUtcDay() public {
         SpendAuth memory a = _auth(address(merchantA), DAILY_CAP, 1);
-        gate.spend(a, _sign(a, agentPk), _noProof());
+        _gateSpend(a, _sign(a, agentPk), _noProof());
         assertEq(gate.remainingToday(cardId), 0, "cap exhausted");
 
         vm.warp((block.timestamp / 1 days + 1) * 1 days + 1);
         assertEq(gate.remainingToday(cardId), DAILY_CAP, "fresh bucket");
 
         SpendAuth memory b = _auth(address(merchantA), DAILY_CAP, 2);
-        gate.spend(b, _sign(b, agentPk), _noProof());
+        _gateSpend(b, _sign(b, agentPk), _noProof());
         assertEq(usd.balanceOf(address(merchantA)), 2 * DAILY_CAP);
     }
 
@@ -198,11 +198,11 @@ contract SpendGateTest is AgentCardBase {
         uint256 midnight = (block.timestamp / 1 days + 1) * 1 days;
         vm.warp(midnight - 60);
         SpendAuth memory a = _auth(address(merchantA), DAILY_CAP, 1);
-        gate.spend(a, _sign(a, agentPk), _noProof());
+        _gateSpend(a, _sign(a, agentPk), _noProof());
 
         vm.warp(midnight + 60);
         SpendAuth memory b = _auth(address(merchantA), DAILY_CAP, 2);
-        gate.spend(b, _sign(b, agentPk), _noProof());
+        _gateSpend(b, _sign(b, agentPk), _noProof());
 
         assertEq(usd.balanceOf(address(merchantA)), 2 * DAILY_CAP, "two caps in two minutes, by design");
     }
@@ -219,7 +219,7 @@ contract SpendGateTest is AgentCardBase {
     ///      approval persists, but no path to it survives.
     function test_revocation_isInstantAndTotal() public {
         SpendAuth memory a = _auth(address(merchantA), 10e6, 1);
-        gate.spend(a, _sign(a, agentPk), _noProof());
+        _gateSpend(a, _sign(a, agentPk), _noProof());
 
         vm.prank(owner);
         cardManager.revoke(cardId);
@@ -231,6 +231,6 @@ contract SpendGateTest is AgentCardBase {
     function _expectRevert(SpendAuth memory auth, bytes4 expected) internal {
         bytes memory sig = _sign(auth, agentPk);
         vm.expectRevert(expected);
-        gate.spend(auth, sig, _noProof());
+        _gateSpend(auth, sig, _noProof());
     }
 }

@@ -51,15 +51,19 @@ contract Deploy is Script {
         }
         CardManager cardManager = new CardManager(identityRegistry);
         SpendGate gate = new SpendGate(address(cardManager), paymentToken);
-        SpendRouter router = new SpendRouter(address(gate));
+        SpendRouter router = new SpendRouter(address(gate), address(cardManager));
+        // The gate settles only for the router, which counts every attempt for velocity.
+        gate.setRouter(address(router));
         // Three named merchants: two in a typical card's policy, one deliberately outside it,
         // so an out-of-scope refusal is demonstrable with real counterparties.
-        MockMerchant merchantA =
-            new MockMerchant("Lagos Cloud Hosting", address(router), address(cardManager), reputationRegistry);
+        MockMerchant merchantA = new MockMerchant(
+            "Lagos Cloud Hosting", address(router), address(cardManager), reputationRegistry
+        );
         MockMerchant merchantB =
             new MockMerchant("Horizon Data API", address(router), address(cardManager), reputationRegistry);
-        MockMerchant merchantC =
-            new MockMerchant("Riverside Subscriptions", address(router), address(cardManager), reputationRegistry);
+        MockMerchant merchantC = new MockMerchant(
+            "Riverside Subscriptions", address(router), address(cardManager), reputationRegistry
+        );
         ReputationReader reader =
             new ReputationReader(address(cardManager), reputationRegistry, identityRegistry);
 
