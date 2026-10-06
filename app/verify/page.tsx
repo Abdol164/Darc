@@ -9,38 +9,22 @@
  */
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { formatUnits, getAddress, isAddress, type Address, type Hex } from "viem";
+import { formatUnits, getAddress, isAddress } from "viem";
 import { Shell } from "@/components/shell";
 import { Button, DataRow, Empty, Notice, Panel, StatusBadge, Table, ui as u } from "@/components/ui";
 import { AddressLink, MerchantCell, Stat, pieces as p } from "@/components/pieces";
 import { ERC8004 } from "@/config/chain";
-import { ADDRESSES, cardManagerAbi, spendGateAbi } from "@/lib/contracts";
-import { loadAgentReport, loadAttestations, loadIdentity, publicClient, type Attestation } from "@/lib/chain";
-
-type Result = {
-  agentKey: Address;
-  found: boolean;
-  agentId?: string;
-  owner?: Address;
-  approved: number;
-  declined: number;
-  revoked: boolean;
-  expired: boolean;
-  dailyCap?: bigint;
-  remaining?: bigint;
-  validUntil?: number;
-  issuedAt?: number;
-  holder?: string;
-  wallet?: string;
-  attestations: Attestation[];
-};
+import { loadAgentRecord, type AgentRecord } from "@/lib/report";
 
 function VerifyInner() {
   const search = useSearchParams();
   const [input, setInput] = useState("");
-  const [result, setResult] = useState<Result>();
+  const [result, setResult] = useState<AgentRecord>();
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => setOrigin(window.location.origin), []);
 
   const lookup = useCallback(async (raw: string) => {
     setBusy(true);
@@ -49,48 +33,7 @@ function VerifyInner() {
     try {
       const trimmed = raw.trim();
       if (!isAddress(trimmed)) throw new Error("That does not look like an address. Paste a 0x… agent address.");
-      const agentKey = getAddress(trimmed);
-      const report = await loadAgentReport(agentKey);
-
-      if (!report.found) {
-        setResult({ agentKey, found: false, approved: 0, declined: 0, revoked: false, expired: false, attestations: [] });
-        return;
-      }
-
-      const [card, remaining, identity, attestations] = await Promise.all([
-        publicClient.readContract({
-          address: ADDRESSES.cardManager,
-          abi: cardManagerAbi,
-          functionName: "getCard",
-          args: [report.cardId as Hex],
-        }),
-        publicClient.readContract({
-          address: ADDRESSES.spendGate,
-          abi: spendGateAbi,
-          functionName: "remainingToday",
-          args: [report.cardId as Hex],
-        }),
-        loadIdentity(report.agentId),
-        loadAttestations(report.agentId),
-      ]);
-
-      setResult({
-        agentKey,
-        found: true,
-        agentId: report.agentId.toString(),
-        owner: report.owner,
-        approved: Number(report.approvedCount),
-        declined: Number(report.declinedCount),
-        revoked: report.revoked,
-        expired: report.expired,
-        dailyCap: card.dailyCap,
-        remaining,
-        validUntil: Number(card.validUntil),
-        issuedAt: Number(report.activeSince),
-        holder: identity.holder as string | undefined,
-        wallet: identity.wallet as string | undefined,
-        attestations,
-      });
+      setResult(await loadAgentRecord(getAddress(trimmed)));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -239,6 +182,20 @@ function VerifyInner() {
           </>
         )}
 
+        {result && (
+          <Panel
+            title="For merchants"
+            note="Check an agent before you accept its payment. The badge and the JSON read the same chain data as this page."
+          >
+            <div className={p.merchantKit}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a live SVG from our own API */}
+              <img src={`/api/badge/${result.agentKey}`} alt="Darc record badge for this agent" className={p.badge} />
+              <Snippet label="Embed the badge" text={`<img src="${origin}/api/badge/${result.agentKey}" alt="Darc record">`} />
+              <Snippet label="Read the record as JSON" text={`curl ${origin}/api/agents/${result.agentKey}`} />
+            </div>
+          </Panel>
+        )}
+
         {result && !result.found && (
           <Panel>
             <Empty title="Nothing on record">
@@ -249,6 +206,32 @@ function VerifyInner() {
         )}
       </div>
     </Shell>
+  );
+}
+
+/** A line of code with a copy button. Falls back to selecting the text if the clipboard refuses. */
+function Snippet({ label, text }: { label: string; text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    const code = e.currentTarget.parentElement?.querySelector("code");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      if (code) window.getSelection()?.selectAllChildren(code);
+    }
+  };
+  return (
+    <div className={p.snippet}>
+      <div className={p.snippetHead}>
+        <span>{label}</span>
+        <button type="button" className={u.linkBtn} onClick={copy}>
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <code className={p.snippetCode}>{text}</code>
+    </div>
   );
 }
 

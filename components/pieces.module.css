@@ -326,3 +326,51 @@
     font-size: 32px;
   }
 }
+
+/* ---- merchant kit (verify page) ------------------------------------------------------- */
+.merchantKit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+.badge {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.snippet {
+  width: 100%;
+  min-width: 0;
+}
+.snippetHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.snippetHead button {
+  font-family: var(--mono);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.snippetCode {
+  display: block;
+  padding: var(--sp-3);
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  border-radius: var(--rd-1);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+}
