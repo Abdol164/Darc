@@ -16,6 +16,7 @@
  */
 import { encodeAbiParameters, keccak256, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { personaFor } from "./agent";
 
 const KEY = "agentcard.cards.v1";
 
@@ -149,7 +150,8 @@ export async function discoverCards(
     misses = 0;
 
     // Keep whatever the issuing device recorded (limit, merchant list, names); fall back to
-    // sensible values when recovering on a device that has never seen this card.
+    // sensible values when recovering on a device that has never seen this card. The persona
+    // falls back by INDEX, not a fixed name, so recovery lands on the same one issuing gave it.
     const cached = getCard(cardId);
     found.push({
       cardId,
@@ -157,8 +159,8 @@ export async function discoverCards(
       owner,
       agentAddress,
       agentPrivateKey,
-      agentName: cached?.agentName ?? "Atlas",
-      persona: cached?.persona ?? "Procurement assistant",
+      agentName: cached?.agentName ?? personaFor(index).name,
+      persona: cached?.persona ?? personaFor(index).persona,
       merchants: cached?.merchants ?? [],
       dailyCapUsd: cached?.dailyCapUsd ?? 0,
       issuedAt: cached?.issuedAt ?? Date.now(),

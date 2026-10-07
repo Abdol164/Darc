@@ -16,11 +16,27 @@
 import type { Address } from "viem";
 import { MERCHANTS } from "@/config/merchants";
 
-export const AGENT = {
-  name: "Atlas",
-  persona: "Procurement assistant",
-  brief: "Keeps the team's infrastructure paid for, within whatever limits it is given.",
-} as const;
+/**
+ * Names and personas for issued cards, picked by the card's derivation index rather than
+ * stored at random: the same index always lands on the same persona, so a card recovered on a
+ * new device (`discoverCards`, which has never cached a name for it) still gets a name, and
+ * gets the SAME one it had before. Every persona keeps the demo's one brief.
+ */
+const BRIEF = "Keeps the team's infrastructure paid for, within whatever limits it is given.";
+
+const PERSONAS = [
+  { name: "Atlas", persona: "Procurement assistant" },
+  { name: "Juno", persona: "Billing assistant" },
+  { name: "Orin", persona: "Ops assistant" },
+  { name: "Vale", persona: "Infrastructure assistant" },
+  { name: "Reva", persona: "Subscriptions assistant" },
+  { name: "Kess", persona: "Platform assistant" },
+] as const;
+
+export const personaFor = (index: number) => PERSONAS[((index % PERSONAS.length) + PERSONAS.length) % PERSONAS.length];
+
+/** The demo agent shown before any card exists: always the first persona, Atlas. */
+export const AGENT = { ...PERSONAS[0], brief: BRIEF } as const;
 
 export type Task = {
   id: string;

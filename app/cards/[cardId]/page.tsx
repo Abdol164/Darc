@@ -83,7 +83,7 @@ export default function CardDetailPage() {
     const results: Record<string, TaskOutcome> = {};
 
     try {
-      say(line("agent", `${AGENT.name} here. ${TASKS.length} things to pay for today. Checking what this card allows.`));
+      say(line("agent", `${stored.agentName} here. ${TASKS.length} things to pay for today. Checking what this card allows.`));
       const fresh = await loadCardState(cardId);
       if (!fresh) throw new Error("card not found");
       say(
@@ -564,11 +564,11 @@ export default function CardDetailPage() {
           </div>
 
           <Panel
-            title={`${AGENT.name}'s run`}
+            title={`${stored?.agentName ?? AGENT.name}'s run`}
             note="The agent picks its own amounts and merchants, and decides what to do about each refusal."
             action={
               <Button variant="primary" onClick={run} disabled={running || !!busy || !state}>
-                {running ? "Running…" : lines.length ? "Run again" : `Start ${AGENT.name}`}
+                {running ? "Running…" : lines.length ? "Run again" : `Start ${stored?.agentName ?? AGENT.name}`}
               </Button>
             }
           >
@@ -597,14 +597,14 @@ export default function CardDetailPage() {
 
             {lines.length === 0 ? (
               <Empty title="Not started">
-                {AGENT.name} has {TASKS.length} payments to make. One fits the card, one is over the
+                {stored?.agentName ?? AGENT.name} has {TASKS.length} payments to make. One fits the card, one is over the
                 limit, one is at a merchant this card does not allow.
               </Empty>
             ) : (
               <div className={p.transcript} ref={logRef}>
                 {lines.map((l, i) => (
                   <div key={i} className={p.line}>
-                    <span className={p.who}>{l.who === "agent" ? AGENT.name : "chain"}</span>
+                    <span className={p.who}>{l.who === "agent" ? (stored?.agentName ?? AGENT.name) : "chain"}</span>
                     <span className={l.tone === "ok" ? p.lineOk : l.tone === "declined" ? p.lineDeclined : l.tone === "note" ? p.lineNote : undefined}>
                       {l.text}
                       {l.href && (

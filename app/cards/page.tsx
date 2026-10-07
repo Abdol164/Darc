@@ -14,7 +14,7 @@ import { BURST_WINDOW_S, DEFAULT_PURPOSE, RuleFields } from "@/components/rule-f
 import { MERCHANTS } from "@/config/merchants";
 import { ADDRESSES, ausdFaucetAbi, cardManagerAbi, erc20Abi } from "@/lib/contracts";
 import { merchantRoot } from "@/lib/merkle";
-import { AGENT } from "@/lib/agent";
+import { AGENT, personaFor } from "@/lib/agent";
 import { last4, listCards, nextIndex, saveCard, type StoredCard } from "@/lib/cards";
 import { chain, fmtUsd, loadCardState, loadOwnerFunds, publicClient, type CardState } from "@/lib/chain";
 import { useOwner } from "@/lib/owner-context";
@@ -24,6 +24,9 @@ const APPROVAL = 500_000_000n;
 export default function CardsPage() {
   const { owner, busy, error, recovered, signIn, runOwnerAction } = useOwner();
   const [cards, setCards] = useState<{ stored: StoredCard; state: CardState | null }[]>([]);
+  /** The name the NEXT card gets, so the issue button and empty state never promise "Atlas"
+   * and then hand you something else: every index has one fixed persona (lib/agent.ts). */
+  const upcoming = personaFor(nextIndex(owner));
   const [issuing, setIssuing] = useState(false);
   const [cap, setCap] = useState(50);
   const [picked, setPicked] = useState<Address[]>([MERCHANTS[0].address, MERCHANTS[1].address]);
@@ -125,14 +128,15 @@ export default function CardsPage() {
         args: [address, agentAddress],
       });
 
+      const persona = personaFor(index);
       saveCard({
         cardId,
         index,
         owner: address,
         agentAddress,
         agentPrivateKey,
-        agentName: AGENT.name,
-        persona: AGENT.persona,
+        agentName: persona.name,
+        persona: persona.persona,
         merchants: picked,
         dailyCapUsd: cap,
         issuedAt: Date.now(),
@@ -234,7 +238,7 @@ export default function CardsPage() {
 
             <div className={p.btnRow}>
               <Button variant="primary" onClick={issue} disabled={!!busy}>
-                {busy ?? `Issue to ${AGENT.name}`}
+                {busy ?? `Issue to ${upcoming.name}`}
               </Button>
               <Button variant="ghost" onClick={() => setIssuing(false)} disabled={!!busy}>
                 Cancel
@@ -247,7 +251,7 @@ export default function CardsPage() {
           <Panel>
             <Empty title="No cards yet">
               <p className={u.narrow}>
-                {AGENT.name} is a {AGENT.persona.toLowerCase()}. {AGENT.brief}
+                {upcoming.name} is a {upcoming.persona.toLowerCase()}. {AGENT.brief}
               </p>
               {!needsFunding && (
                 <Button variant="primary" onClick={() => setIssuing(true)}>
