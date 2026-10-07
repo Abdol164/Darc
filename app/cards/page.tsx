@@ -274,6 +274,7 @@ export default function CardsPage() {
                   expired={state?.expired}
                   frozen={state?.frozen}
                   merchantCount={stored.merchants.length}
+                  veil={justIssued === stored.cardId}
                 />
               </Link>
             ))}

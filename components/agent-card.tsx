@@ -20,6 +20,8 @@ export type CardFaceProps = {
   frozen?: boolean;
   merchantCount: number;
   small?: boolean;
+  /** Plays once, for a card issued this session: a paper veil is pulled off its corner. */
+  veil?: boolean;
 };
 
 export function AgentCardFace({
@@ -33,12 +35,13 @@ export function AgentCardFace({
   frozen,
   merchantCount,
   small,
+  veil,
 }: CardFaceProps) {
   const state = revoked ? "revoked" : expired ? "expired" : frozen ? "frozen" : "active";
   return (
     // The wrapper casts the shadow: the face is clipped to its notch, and a clip would cut
     // off any shadow drawn on the face itself.
-    <div className={[c.wrap, small && c.wrapSm].filter(Boolean).join(" ")}>
+    <div className={[c.wrap, small && c.wrapSm, veil && c.veiled].filter(Boolean).join(" ")}>
       <div
         className={[
           c.face,
@@ -91,6 +94,7 @@ export function AgentCardFace({
           </div>
         </div>
       </div>
+      {veil && <span className={c.veil} aria-hidden />}
     </div>
   );
 }

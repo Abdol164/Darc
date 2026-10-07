@@ -160,7 +160,8 @@ Motion has one vocabulary: lines rise into place, the record writes itself, the 
 
 | Where | Motion |
 |---|---|
-| Any new card | `card-reveal`: rises 10px and settles from a −0.6° tilt |
+| Any card appearing in a list | `card-reveal`: rises 10px and settles from a −0.6° tilt |
+| A card just issued | `card-unveil`: a paper veil, cut to the card's own notch, is pulled off its top-right corner over 760ms, then the card settles in with `card-settle` |
 | Revoked card | `stamp`: the REVOKED stamp lands, scaling from 1.35 to 1 with a slight bounce |
 | Run log | `fade-in`: each line rises 3px |
 | Pending badge, live dots | `pulse`: the mark breathes; live dots also send out a `ping` |
@@ -223,7 +224,7 @@ Sizes are default (14px) and `lg` (15px, larger padding).
 
 **Empty**: a centred 22px serif title, a muted line, and an optional single action.
 
-**AgentCardFace** (`agent-card.tsx`): the payment card. It is ISO ratio 1.586, at most 400px wide (320px for `small`). It has ink stock lit by cobalt, security-print linework, the gold chip, a mono masked number, the serif agent name and daily limit, and a mono status chip. Revoked cards switch to grey stock and get the stamp. Expired cards are greyed out.
+**AgentCardFace** (`agent-card.tsx`): the payment card. It is ISO ratio 1.586, at most 400px wide (320px for `small`). It has ink stock lit by cobalt, security-print linework, the gold chip, a mono masked number, the serif agent name and daily limit, and a mono status chip. Revoked cards switch to grey stock and get the stamp. Expired cards are greyed out. A `veil` prop plays the card-unveil entrance (see Motion) for a card issued this session.
 
 **MerchantCell**: a 28px mono-initial tile in the merchant's mark colour, with the name and what they sell.
 
