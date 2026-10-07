@@ -52,7 +52,7 @@ const STEPS = [
     n: "03",
     tag: "Owner · Face ID",
     title: "Out of policy? You decide",
-    body: "Over the limit, off the merchant list or off the card's purpose, the payment waits for one passkey tap on your phone instead of failing. Whatever happens, the merchant writes it to the shared reputation registry.",
+    body: "Over the limit, off the merchant list or off the card's stated purpose, the payment is held and a push alert reaches your phone. One passkey tap approves or declines it. Whatever happens, the merchant writes it to the shared reputation registry.",
     code: "OwnerApproval(authDigest) → OwnerApproved",
   },
 ];
@@ -130,8 +130,9 @@ export function Landing() {
             The notarised ledger for <em>AI agent</em> spending.
           </h1>
           <p className={`${l.lede} ${l.in} ${l.d3}`}>
-            Darc gives an AI agent a card with a daily limit and a short list of merchants. Every
-            payment it attempts, approved or refused, is written on-chain where anyone can check it.
+            Darc gives an AI agent a card with a daily limit, a short list of merchants and a stated
+            purpose. Every payment it attempts — paid, held for your approval, or refused — is
+            written on-chain where anyone can check it.
           </p>
 
           <div className={`${l.actions} ${l.in} ${l.d4}`}>
@@ -158,7 +159,7 @@ export function Landing() {
           <div className={`${p.stats} ${l.facts} ${l.in} ${l.d6}`}>
             <Stat label="Checks on every payment" value="12" note="each refusal names its reason" />
             <Stat label="Transactions to revoke" value="1" note="permanent from the next block" />
-            <Stat label="Held by the agent" value="$0" note="it signs; it never holds funds or gas" />
+            <Stat label="In the agent's custody" value="$0" note="it signs; it never holds funds or gas" />
             <Stat label="Settles in" value="AUSD" note="Agora's dollar stablecoin, not a mock" />
           </div>
         </div>
@@ -234,9 +235,10 @@ export function Landing() {
                   })}
                 </Table>
                 <p className={l.tableFoot}>
-                  The two the card will not pay on its own wait for the owner&apos;s passkey instead of
-                  failing. Approved, they settle as OwnerApproved; declined, the refusal is recorded.
-                  The merchant writes every verdict, so Darc cannot edit its own agents&apos; record.
+                  The two the card will not pay on its own are held, and a push alert reaches the
+                  owner&apos;s phone. Approved with a passkey tap, they settle as OwnerApproved;
+                  declined, the refusal is recorded. The merchant writes every verdict, so Darc
+                  cannot edit its own agents&apos; record.
                 </p>
               </Panel>
             </div>
